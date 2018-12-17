@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "adsb_auxiliars.h"
 
 /*==============================================
 FUNCTION: bin2int
