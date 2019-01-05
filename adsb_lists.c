@@ -85,7 +85,6 @@ adsbMsg *LIST_insert(char *ICAO, adsbMsg* list){
 	aux2->next->mensagemVEL[0] = '\0';
 
 	return list;
-
 	//return aux2->next;					//SUCCESS
 }
 

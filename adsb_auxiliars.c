@@ -138,5 +138,4 @@ void getADSBFrame(char *msgi, char *msgf){
 		j++;
 	}
 	msgf[j]='\0';
-	
 }
