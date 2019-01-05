@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "adsb_auxiliars.h"
 
 /*==============================================
 FUNCTION: bin2int
@@ -101,14 +102,15 @@ void hex2bin(char *msgi, char *msgbin){
 }
 
 /*==============================================
-FUNCTION: hex2int
-INPUT: a char
+FUNCTION: downlinkFormat
+INPUT: a char vector
 OUTPUT: it returns an integer
-DESCRIPTION: this function receives a hexadecimal
-digit, been it uppercase or lowercase, and returns
-its integer value.
+DESCRIPTION: this function receives a vector of
+chars containing hexadecimal digits and calculates
+the downlinkFormat of the message represented by
+the sequence.
 ================================================*/
-int downlinkFormat(char *msgi){ 			//Função que retorna o valor de DownlinkFormat da mensagem ADSB.
+int downlinkFormat(char *msgi){
 	char msg_hex[3], msgbin[9], msgbin_aux[6];
 	msg_hex[0] = msgi[0];
 	msg_hex[1] = msgi[1];
@@ -119,4 +121,21 @@ int downlinkFormat(char *msgi){ 			//Função que retorna o valor de DownlinkFor
 	msgbin_aux[5] = '\0';
 
 	return bin2int(msgbin_aux);
+}
+
+/*==============================================
+FUNCTION: getADSBFrame
+INPUT: two char vectors
+OUTPUT: a char vector, passed by reference
+DESCRIPTION: this function receives all the hexadecimal
+digits received from the receiver device and returns 
+only the 112 bits that represent the ADS-B message.
+================================================*/
+void getADSBFrame(char *msgi, char *msgf){
+	int i = 0, j=0;
+	for(i = 12; msgi[i] != '\0'; i++){
+		msgf[j] = msgi[i];
+		j++;
+	}
+	msgf[j]='\0';
 }

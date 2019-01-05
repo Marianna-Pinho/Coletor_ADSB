@@ -11,5 +11,6 @@ int hex2int(char caractere);
 void int2bin(int num, char *msgbin);
 void hex2bin(char *msgi, char *msgbin);
 int downlinkFormat(char *msgi);
+void getADSBFrame(char *msgi, char *msgf);
 
 #endif
