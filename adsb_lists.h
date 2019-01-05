@@ -59,7 +59,6 @@ typedef struct msg{
 	struct msg *next;
 }adsbMsg;
 
-
 adsbMsg* LIST_create(char *ICAO);
 adsbMsg* LIST_insert(char *ICAO, adsbMsg* list);
 adsbMsg* LIST_find(char* ICAO, adsbMsg* list);
