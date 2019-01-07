@@ -124,18 +124,66 @@ int downlinkFormat(char *msgi){
 }
 
 /*==============================================
-FUNCTION: getADSBFrame
+FUNCTION: getFrame
 INPUT: two char vectors
 OUTPUT: a char vector, passed by reference
 DESCRIPTION: this function receives all the hexadecimal
 digits received from the receiver device and returns 
-only the 112 bits that represent the ADS-B message.
+only the 112 bits (or 28 bytes) that represent
+the ADS-B message.
 ================================================*/
-void getADSBFrame(char *msgi, char *msgf){
+void getFrame(char *msgi, char *msgf){
 	int i = 0, j=0;
 	for(i = 12; msgi[i] != '\0'; i++){
 		msgf[j] = msgi[i];
 		j++;
 	}
 	msgf[j]='\0';
+}
+
+/*==============================================
+FUNCTION: getICAO
+INPUT: two char vectors
+OUTPUT: a char vector, passed by reference
+DESCRIPTION: this function receives the 28 bytes
+of ADS-B data and returns the ICAO of the aircraft
+that sent that data.
+================================================*/
+void getICAO(char *msgi, char *msgf){
+	strncpy(msgf,&msgi[2],6);
+	msgf[6]='\0';
+}
+
+/*==============================================
+FUNCTION: getData
+INPUT: two char vectors
+OUTPUT: a char vector, passed by reference
+DESCRIPTION: this function receives the 28 bytes
+of ADS-B data and returns the 56 bits (or 14 bytes)
+of information, which can contain, for example, the
+velocity, latitude, etc. of the aircraft that sent
+the data.
+================================================*/
+void getData(char *msgi, char *msgf){
+	strncpy(msgf,&msgi[8],14);
+	msgf[14]='\0';
+}
+
+/*==============================================
+FUNCTION: getTypecode
+INPUT: a char vector
+OUTPUT: a integer
+DESCRIPTION: this function receives the 28 bytes
+(or 112 bits) of ADS-B data and returns its type-
+code, which indicates the kind of information
+the data contains. 
+================================================*/
+int getTypecode(char *msgi){
+	char msgbin[113];
+
+	hex2bin(msgi, msgbin);
+	strncpy(msgbin,&msgbin[32],5);
+	msgbin[5]='\0';
+
+	return bin2int(msgbin);
 }
