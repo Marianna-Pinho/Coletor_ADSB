@@ -186,4 +186,3 @@ int getTypecode(char *msgi){
 	msgbin[5]='\0';
 
 	return bin2int(msgbin);
-}
