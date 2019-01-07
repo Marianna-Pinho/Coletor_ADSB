@@ -6,6 +6,7 @@ These functions are auxiliars of
 other functions in the system.
 =================================*/
 
+
 int bin2int(char *msgbin);
 int hex2int(char caractere);
 void int2bin(int num, char *msgbin);
