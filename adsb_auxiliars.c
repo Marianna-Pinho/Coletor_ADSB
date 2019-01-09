@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "adsb_auxiliars.h"
 
 /*==============================================
@@ -186,4 +187,33 @@ int getTypecode(char *msgi){
 	msgbin[5]='\0';
 
 	return bin2int(msgbin);
+}
+
+/*==============================================
+FUNCTION: getMOD
+INPUT: two float arguments
+OUTPUT: a float
+DESCRIPTION: this function receives two float
+values and returns the rest of the division
+between them (x MOD y). The rest is calculated
+based on the Euclidean division, where the rest
+is a non-negative value.
+================================================*/
+float getMOD(float x, float y){
+	return x - y*(floor(x/y));
+}
+
+/*==============================================
+FUNCTION: getLarger
+INPUT: two integer arguments
+OUTPUT: an integer
+DESCRIPTION: this function receives two integer
+values and returns the larger between them.
+================================================*/
+int getLarger(int a, int b){
+	if(a > b){
+		return a;
+	}else{
+		return b;
+	}
 }
