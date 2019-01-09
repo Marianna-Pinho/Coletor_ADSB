@@ -287,7 +287,6 @@ longitude of the aircraft that sent the data,
 based on those messages.
 ================================================*/
 int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO, float *lat, float *lon){
-
 	float latCPR_even = 0.0, latCPR_odd = 0.0,
 	lonCPR_even = 0.0, lonCPR_odd = 0.0;
 

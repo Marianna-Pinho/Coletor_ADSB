@@ -14,7 +14,7 @@ int getPositiontype(char *msgi);
 int getCPRLatitude(char *msgi);
 int getCPRLongitude(char *msgi);
 int getCprNL(float lat);
-int getAirbonePosition(char *msgEVEN, char *msgODD, double timeE, double timeO, float *lat, float *lon);
+int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO, float *lat, float *lon);
 int getAltitude(char *msgi);
 
 
