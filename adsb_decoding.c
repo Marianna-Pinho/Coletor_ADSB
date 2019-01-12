@@ -5,7 +5,6 @@
 #include "adsb_decoding.h"
 #include "adsb_auxiliars.h"
 
-
 /*===========================
 Functions used in identication
 decoding

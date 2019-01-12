@@ -64,5 +64,6 @@ adsbMsg* LIST_insert(char *ICAO, adsbMsg* list);
 adsbMsg* LIST_find(char* ICAO, adsbMsg* list);
 adsbMsg* LIST_removeOne(char* ICAO, adsbMsg** list);
 void	 LIST_removeAll(adsbMsg** list);
+adsbMsg* LIST_setPosition(char *msg, adsbMsg *no);
 
 #endif
