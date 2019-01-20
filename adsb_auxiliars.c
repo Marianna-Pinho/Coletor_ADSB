@@ -103,7 +103,7 @@ void hex2bin(char *msgi, char *msgbin){
 }
 
 /*==============================================
-FUNCTION: downlinkFormat
+FUNCTION: getDownlinkFormat
 INPUT: a char vector
 OUTPUT: it returns an integer
 DESCRIPTION: this function receives a vector of
@@ -111,7 +111,7 @@ chars containing hexadecimal digits and calculates
 the downlinkFormat of the message represented by
 the sequence.
 ================================================*/
-int downlinkFormat(char *msgi){
+int getDownlinkFormat(char *msgi){
 	char msg_hex[3], msgbin[9], msgbin_aux[6];
 	msg_hex[0] = msgi[0];
 	msg_hex[1] = msgi[1];

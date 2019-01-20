@@ -4,6 +4,8 @@
 #include <math.h>
 #include "adsb_decoding.h"
 #include "adsb_auxiliars.h"
+#include "adsb_lists.h"
+#include "adsb_time.h"
 
 /*===========================
 Functions used in identication
@@ -191,7 +193,7 @@ DESCRIPTION: this function receives the 28 bytes
 that indicates if the position message is of the
 even or odd type.
 ================================================*/
-int getPositiontype(char *msgi){
+int getPositionType(char *msgi){
 	if(!isPositionMessage(msgi)){ //It verifies if the data is about position
 		//printf("It's not a Position Message\n");
 		return -1;
@@ -378,4 +380,144 @@ int getAltitude(char *msgi){
 		//The code for multiples of 100 is not implemented yet
 		return -1;
 	}
+}
+
+/*==============================================
+FUNCTION: setPosition
+INPUT: a char vector and an adsbMsg variable passed
+by reference
+OUTPUT: an adsbMsg pointer
+DESCRIPTION: this function receives the 28 bytes
+(or 112 bits) of ADS-B position data, verifies the
+conditions to save the message and returns an adsbMsg
+variable filled with the data received. If already exists
+a message,of the same type, saved, it will be replaced.
+If the message is of the oposite type, the time interval
+between them must be less or equal to 10 seconds, on the
+other hand, the message will be removed. In all the cases,
+the new message (more recent) will be saved. 
+================================================*/
+adsbMsg* setPosition(char *msg, adsbMsg *no){
+	double ctime = getCurrentTime();	//It gets the time of arrive of the new message
+	int typeMsg = getPositionType(msg);
+	int sizeMsg[2];
+
+	sizeMsg[0] = strlen(no->oeMSG[0]);
+	sizeMsg[1] = strlen(no->oeMSG[1]);
+
+	if(sizeMsg[!typeMsg] != 0){		//It verifies if there is a message of the other type saved
+		if((ctime - no->oeTimestamp[!typeMsg]) > 10){	//It verifies if the time interval between the already saved and the new message isn't bigger than 10 seconds
+			no->oeMSG[!typeMsg][0] = '\0';
+		}
+	}
+
+	strcpy((no->oeMSG[typeMsg]), msg);	//It saves the new message
+	no->oeMSG[typeMsg][28] = '\0';
+	no->oeTimestamp[typeMsg] = ctime;	//It saves the time of arrive of the new message
+
+	return no;
+}
+
+/*==============================================
+FUNCTION: decodeMessage
+INPUT: a char vector, an adsbMsg pointer and an 
+adsbMgs pointer to pointer
+OUTPUT: an adsbMsg pointer
+DESCRIPTION: this function receives the 28 bytes
+(or 112 bits) of ADS-B data, a list of information
+about the aircraft, extracts the information from 
+the data and save it into the list.
+================================================*/
+adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
+
+	char icao[7], tag[3];
+	icao[0] = '\0';
+
+	int rateV = 0, alt = 0;
+	float lat = 0.0, lon = 0.0,
+	heading = 0.0, vel_h = 0.0;
+	
+	adsbMsg* no = NULL;
+
+	if((getDownlinkFormat(buffer) == 17) && (strlen(buffer) == 28)){ //It verifies if the message received is of ADS-B type
+		printf("\n\n***********ADSB MESSAGE*************\n");
+		printf("MESSAGE:%s\n", buffer);
+
+//Catching ICAO
+		getICAO(buffer, icao);
+		
+		if(messages == NULL){
+			messages = LIST_create(icao);	//If the list of messages is empty, we create the first node
+			no = messages;
+
+		}else{
+			if((no = LIST_insert(icao, messages)) == NULL){ //It tries to insert a new node
+				if((no = LIST_find(icao, messages)) == NULL){
+					perror("ICAO not found");	
+					return messages;
+					
+				}					
+			}
+		}
+
+		printf("\n-----------------------------------------------------------\n| ");
+		printf("ICAO:%s\n", no->ICAO); 
+		printf("-----------------------------------------------------------\n");
+
+//Catching the Callsign
+		if((1 <= getTypecode(buffer)) && (getTypecode(buffer) <= 4)){
+			getCallsign(buffer, no->callsign);
+			
+			printf("\n-------------------IDENTIFICATION----------------------------------------\n|");	
+			printf(" CALLSIGN: %s\n", no->callsign );	printf("\t\n");
+			printf("--------------------------------------------------------------------------\n");
+
+		}
+
+//Catching Latitude, Longitude and Altitude
+		else if(isPositionMessage(buffer)){
+
+			no = setPosition(buffer, no);
+			
+			if((strlen(no->oeMSG[0]) != 0) && (strlen(no->oeMSG[1]) != 0)){ //It verifies if there is both messages (even and odd)
+					getAirbornePosition(no->oeMSG[0], no->oeMSG[1], no->oeTimestamp[0], no->oeTimestamp[1], &lat, &lon); //It gets the latitude and longitude
+					alt = getAltitude(buffer); //It gets the altitude
+
+					no->Longitude = lon;
+					no->Latitude = lat;
+					no->Altitude = alt;
+					
+					printf("\n-------------------POSICIONAMENTO--------------------------------------\n|");
+					printf("LAT: %f\n|LON: %f\n|ALT: %d\n",no->Latitude,no->Longitude,no->Altitude); 
+					printf("------------------------------------------------------------------------\n");
+
+			}		
+		}
+//Catching the velocity
+		else if(getTypecode(buffer) == 19){
+		
+			getVelocities(buffer, &vel_h, &heading, &rateV, tag);
+
+			no->horizontalVelocity = vel_h;
+			no->verticalVelocity = rateV;
+			no->groundTrackHeading = heading;
+
+			strcpy(no->mensagemVEL, buffer);
+			no->mensagemVEL[strlen(buffer)] = '\0';
+
+			printf("-------------------------------------VELOCIDADE----------------------------------\n");
+			printf("|VELH: %f\n|HEAD: %f\n|RATEV: %d\n|TAG: %s\n",no->horizontalVelocity, no->groundTrackHeading, no->verticalVelocity,tag); 
+			printf("-------------------------------------------------------------------------------\n");
+
+		}
+	
+	}else{
+		printf("\n\n###############No ADS-B Message#####################\n");
+		printf("|Message: %s\n", buffer );
+	}
+
+	memset(buffer, 0x0, 29);
+	
+	*nof = no;
+	return messages;
 }

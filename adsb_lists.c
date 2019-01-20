@@ -12,6 +12,7 @@ DESCRIPTION: this function creates the first node
 of a dynamic list that stores the aircraft information 
 received through adsb messages.
 ================================================*/
+char *collectorId = "123456";
 
 adsbMsg* LIST_create(char *ICAO){
 	adsbMsg *msg = (adsbMsg*)malloc(sizeof(adsbMsg));
@@ -84,8 +85,8 @@ adsbMsg *LIST_insert(char *ICAO, adsbMsg* list){
 	aux2->next->messageID[0] = '\0';
 	aux2->next->mensagemVEL[0] = '\0';
 
-	return list;
-	//return aux2->next;					//SUCCESS
+	//return list;
+	return aux2->next;					//SUCCESS
 }
 
 /*==============================================
@@ -152,40 +153,4 @@ void LIST_removeAll(adsbMsg** list){
 		free(aux1);
 		aux1 = *list;
 	}
-}
-
-/*==============================================
-FUNCTION: LIST_setPosition
-INPUT: a char vector and an adsbMsg variable passed
-by reference
-OUTPUT: an adsbMsg pointer
-DESCRIPTION: this function receives the 28 bytes
-(or 112 bits) of ADS-B position data, verifies the
-conditions to save the message and returns an adsbMsg
-variable filled with the data received. If already exists
-a message,of the same type, saved, it will be replaced.
-If the message is of the oposite type, the time interval
-between them must be less or equal to 10 seconds, on the
-other hand, the message will be removed. In all the cases,
-the new message (more recent) will be saved. 
-================================================*/
-adsbMsg* LIST_setPosition(char *msg, adsbMsg *no){
-	double ctime = getCurrentTime();	//It gets the time of arrive of the new message
-	int typeMsg = getPositiontype(msg);
-	int sizeMsg[2];
-
-	sizeMsg[0] = strlen(no->oeMSG[0]);
-	sizeMsg[1] = strlen(no->oeMSG[1]);
-
-	if(sizeMsg[!typeMsg] != 0){		//It verifies if there is a message of the other type saved
-		if((ctime - no->oeTimestamp[!typeMsg]) > 10){	//It verifies if the time interval between the already saved and the new message isn't bigger than 10 seconds
-			no->oeMSG[!typeMsg][0] = '\0';
-		}
-	}
-
-	strcpy((no->oeMSG[typeMsg]), msg);	//It saves the new message
-	no->oeMSG[typeMsg][28] = '\0';
-	no->oeTimestamp[typeMsg] = ctime;	//It saves the time of arrive of the new message
-
-	return no;
 }

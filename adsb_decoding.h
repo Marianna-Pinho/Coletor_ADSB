@@ -7,16 +7,19 @@ the information contained in an adsb
 message.
 =================================*/
 
+typedef struct msg adsbMsg;
+
 int getCallsign(char *msgi, char *msgf);
 int getVelocities(char *msgi, float *speed, float *head, int *rateCD, char *tag);
 int isPositionMessage(char *msgi);
-int getPositiontype(char *msgi);
+int getPositionType(char *msgi);
 int getCPRLatitude(char *msgi);
 int getCPRLongitude(char *msgi);
 int getCprNL(float lat);
 int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO, float *lat, float *lon);
 int getAltitude(char *msgi);
-
+adsbMsg* setPosition(char *msg, adsbMsg *no);
+adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof);
 
 #define PI_MATH 3.14159265358979323846
 
