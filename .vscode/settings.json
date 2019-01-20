@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "adsb_lists.h": "c"
+        "adsb_lists.h": "c",
+        "adsb_time.h": "c"
     }
 }

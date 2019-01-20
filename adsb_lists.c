@@ -12,6 +12,7 @@ DESCRIPTION: this function creates the first node
 of a dynamic list that stores the aircraft information 
 received through adsb messages.
 ================================================*/
+char *collectorId = "123456";
 
 adsbMsg* LIST_create(char *ICAO){
 	adsbMsg *msg = (adsbMsg*)malloc(sizeof(adsbMsg));
@@ -84,8 +85,8 @@ adsbMsg *LIST_insert(char *ICAO, adsbMsg* list){
 	aux2->next->messageID[0] = '\0';
 	aux2->next->mensagemVEL[0] = '\0';
 
-	return list;
-	//return aux2->next;					//SUCCESS
+	//return list;
+	return aux2->next;					//SUCCESS
 }
 
 /*==============================================

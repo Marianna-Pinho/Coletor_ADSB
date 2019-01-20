@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "adsb_auxiliars.h"
 
 /*==============================================
@@ -102,7 +103,7 @@ void hex2bin(char *msgi, char *msgbin){
 }
 
 /*==============================================
-FUNCTION: downlinkFormat
+FUNCTION: getDownlinkFormat
 INPUT: a char vector
 OUTPUT: it returns an integer
 DESCRIPTION: this function receives a vector of
@@ -110,7 +111,7 @@ chars containing hexadecimal digits and calculates
 the downlinkFormat of the message represented by
 the sequence.
 ================================================*/
-int downlinkFormat(char *msgi){
+int getDownlinkFormat(char *msgi){
 	char msg_hex[3], msgbin[9], msgbin_aux[6];
 	msg_hex[0] = msgi[0];
 	msg_hex[1] = msgi[1];
@@ -124,18 +125,95 @@ int downlinkFormat(char *msgi){
 }
 
 /*==============================================
-FUNCTION: getADSBFrame
+FUNCTION: getFrame
 INPUT: two char vectors
 OUTPUT: a char vector, passed by reference
 DESCRIPTION: this function receives all the hexadecimal
 digits received from the receiver device and returns 
-only the 112 bits that represent the ADS-B message.
+only the 112 bits (or 28 bytes) that represent
+the ADS-B message.
 ================================================*/
-void getADSBFrame(char *msgi, char *msgf){
+void getFrame(char *msgi, char *msgf){
 	int i = 0, j=0;
 	for(i = 12; msgi[i] != '\0'; i++){
 		msgf[j] = msgi[i];
 		j++;
 	}
 	msgf[j]='\0';
+}
+
+/*==============================================
+FUNCTION: getICAO
+INPUT: two char vectors
+OUTPUT: a char vector, passed by reference
+DESCRIPTION: this function receives the 28 bytes
+of ADS-B data and returns the ICAO of the aircraft
+that sent that data.
+================================================*/
+void getICAO(char *msgi, char *msgf){
+	strncpy(msgf,&msgi[2],6);
+	msgf[6]='\0';
+}
+
+/*==============================================
+FUNCTION: getData
+INPUT: two char vectors
+OUTPUT: a char vector, passed by reference
+DESCRIPTION: this function receives the 28 bytes
+of ADS-B data and returns the 56 bits (or 14 bytes)
+of information, which can contain, for example, the
+velocity, latitude, etc. of the aircraft that sent
+the data.
+================================================*/
+void getData(char *msgi, char *msgf){
+	strncpy(msgf,&msgi[8],14);
+	msgf[14]='\0';
+}
+
+/*==============================================
+FUNCTION: getTypecode
+INPUT: a char vector
+OUTPUT: a integer
+DESCRIPTION: this function receives the 28 bytes
+(or 112 bits) of ADS-B data and returns its type-
+code, which indicates the kind of information
+the data contains. 
+================================================*/
+int getTypecode(char *msgi){
+	char msgbin[113];
+
+	hex2bin(msgi, msgbin);
+	strncpy(msgbin,&msgbin[32],5);
+	msgbin[5]='\0';
+
+	return bin2int(msgbin);
+}
+
+/*==============================================
+FUNCTION: getMOD
+INPUT: two float arguments
+OUTPUT: a float
+DESCRIPTION: this function receives two float
+values and returns the rest of the division
+between them (x MOD y). The rest is calculated
+based on the Euclidean division, where the rest
+is a non-negative value.
+================================================*/
+float getMOD(float x, float y){
+	return x - y*(floor(x/y));
+}
+
+/*==============================================
+FUNCTION: getLarger
+INPUT: two integer arguments
+OUTPUT: an integer
+DESCRIPTION: this function receives two integer
+values and returns the larger between them.
+================================================*/
+int getLarger(int a, int b){
+	if(a > b){
+		return a;
+	}else{
+		return b;
+	}
 }
