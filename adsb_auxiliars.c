@@ -126,20 +126,25 @@ int getDownlinkFormat(char *msgi){
 
 /*==============================================
 FUNCTION: getFrame
-INPUT: two char vectors
+INPUT: a char vectors
 OUTPUT: a char vector, passed by reference
 DESCRIPTION: this function receives all the hexadecimal
 digits received from the receiver device and returns 
 only the 112 bits (or 28 bytes) that represent
-the ADS-B message.
+the ADS-B message. Or returns the 14 bytes that
+represents other kind of message.
 ================================================*/
-void getFrame(char *msgi, char *msgf){
-	int i = 0, j=0;
-	for(i = 12; msgi[i] != '\0'; i++){
-		msgf[j] = msgi[i];
-		j++;
+void getFrame(char *msg){
+
+	if((strlen(msg) > 26) && (strlen(msg) < 41)){
+		strncpy(msg, &msg[12], 28);
+		msg[28] = '\0';
+
+	}else{
+		strncpy(msg, &msg[12], 14);
+		msg[14] = '\0';
+
 	}
-	msgf[j]='\0';
 }
 
 /*==============================================

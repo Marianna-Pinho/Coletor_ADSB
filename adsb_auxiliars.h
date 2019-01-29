@@ -11,7 +11,7 @@ int hex2int(char caractere);
 void int2bin(int num, char *msgbin);
 void hex2bin(char *msgi, char *msgbin);
 int getDownlinkFormat(char *msgi);
-void getFrame(char *msgi, char *msgf);
+void getFrame(char *msg);
 void getICAO(char *msgi, char *msgf);
 void getData(char *msgi, char *msgf);
 int getTypecode(char *msgi);
