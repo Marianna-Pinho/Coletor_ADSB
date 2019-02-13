@@ -170,7 +170,7 @@ int SERIAL_read(int fd, char *sBuffer){
 	}
 
 	sBuffer[status] = '\0';
-	printf("M: %s\n", sBuffer);
+	//printf("M: %s\n", sBuffer);
 	
 	SERIAL_removeFL(sBuffer); //It takes out the characters @ and ;
 
