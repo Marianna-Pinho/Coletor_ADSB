@@ -28,7 +28,7 @@ adsbMsg* LIST_create(char *ICAO){
 	msg->oeMSG[1][0] = '\0';
 	msg->oeTimestamp[0] = 0;
 	msg->oeTimestamp[1] = 0;
-	msg->Latitude = 0;
+	msg->Latitude = 0;	//Change 0 for -1. Verifies if nothing depends on it.
 	msg->Longitude = 0;
 	msg->Altitude = 0;
 	msg->horizontalVelocity = 0;

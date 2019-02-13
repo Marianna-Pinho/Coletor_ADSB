@@ -397,25 +397,25 @@ between them must be less or equal to 10 seconds, on the
 other hand, the message will be removed. In all the cases,
 the new message (more recent) will be saved. 
 ================================================*/
-adsbMsg* setPosition(char *msg, adsbMsg *no){
+adsbMsg* setPosition(char *msg, adsbMsg *node){
 	double ctime = getCurrentTime();	//It gets the time of arrive of the new message
 	int typeMsg = getPositionType(msg);
 	int sizeMsg[2];
 
-	sizeMsg[0] = strlen(no->oeMSG[0]);
-	sizeMsg[1] = strlen(no->oeMSG[1]);
+	sizeMsg[0] = strlen(node->oeMSG[0]);
+	sizeMsg[1] = strlen(node->oeMSG[1]);
 
 	if(sizeMsg[!typeMsg] != 0){		//It verifies if there is a message of the other type saved
-		if((ctime - no->oeTimestamp[!typeMsg]) > 10){	//It verifies if the time interval between the already saved and the new message isn't bigger than 10 seconds
-			no->oeMSG[!typeMsg][0] = '\0';
+		if((ctime - node->oeTimestamp[!typeMsg]) > 10){	//It verifies if the time interval between the already saved and the new message isn't bigger than 10 seconds
+			node->oeMSG[!typeMsg][0] = '\0';
 		}
 	}
 
-	strcpy((no->oeMSG[typeMsg]), msg);	//It saves the new message
-	no->oeMSG[typeMsg][28] = '\0';
-	no->oeTimestamp[typeMsg] = ctime;	//It saves the time of arrive of the new message
+	strcpy((node->oeMSG[typeMsg]), msg);	//It saves the new message
+	node->oeMSG[typeMsg][28] = '\0';
+	node->oeTimestamp[typeMsg] = ctime;	//It saves the time of arrive of the new message
 
-	return no;
+	return node;
 }
 
 /*==============================================
@@ -513,11 +513,40 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 	
 	}else{
 		printf("\n\n###############No ADS-B Message#####################\n");
-		printf("|Message: %s\n", buffer );
+		printf("|Message: %s\n", buffer);
 	}
 
 	memset(buffer, 0x0, 29);
 	
 	*nof = no;
 	return messages;
+}
+
+/*==============================================
+FUNCTION: isNodeComplete
+INPUT: an adsbMsg pointer
+OUTPUT: an adsbMsg pointer
+DESCRIPTION: this function receives an adsbMsg node
+and verifies if it has the minimum information expected
+to be saved in the database.
+================================================*/
+adsbMsg* isNodeComplete(adsbMsg *node){
+
+	if(node == NULL){
+		return NULL;
+	}
+
+	if((strlen(node->oeMSG[0]) != 0) && (strlen(node->oeMSG[1]) != 0)){ //It verifies if there are the two position messages
+		if((node->ICAO[0] != 0) && (node->Altitude != 0)){	// It verifies if there is an ICAO and an Altitude
+			
+			node->oeMSG[!(node->lastTime)][0] = '\0'; //It cleans up the oldest message			
+			node->Altitude = 0;
+			node->Latitude = 0;
+			node->Longitude = 0;
+
+			return node;
+		}
+	}
+
+	return NULL;
 }
