@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include "adsb_lists.h"
+#include "adsb_userInfo.h"
 
 /*==============================================
 FUNCTION: LIST_create
@@ -12,7 +13,6 @@ DESCRIPTION: this function creates the first node
 of a dynamic list that stores the aircraft information 
 received through adsb messages.
 ================================================*/
-char *collectorId = "123456";
 
 adsbMsg* LIST_create(char *ICAO){
 	adsbMsg *msg = (adsbMsg*)malloc(sizeof(adsbMsg));
