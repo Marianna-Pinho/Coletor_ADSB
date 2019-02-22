@@ -7,5 +7,6 @@ operations.
 ================================================*/
 
 double getCurrentTime();
+char* getFormatedTime();
 
 #endif

@@ -9,7 +9,7 @@
 #include "adsb_auxiliars.h"
 #include "adsb_serial.h"
 
- const char *SERIALPORTS[13] = {"/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2"};
+const char *SERIALPORTS[13] = {"/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2"};
 
 /*==============================================
 FUNCTION: SERIAL_open
