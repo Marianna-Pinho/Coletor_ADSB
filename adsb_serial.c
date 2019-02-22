@@ -9,6 +9,8 @@
 #include "adsb_auxiliars.h"
 #include "adsb_serial.h"
 
+const char *SERIALPORTS[13] = {"/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2"};
+
 /*==============================================
 FUNCTION: SERIAL_open
 INPUT: void
@@ -23,12 +25,15 @@ by a integer number.
 int SERIAL_open(void){
 
 	int fd = 0;
+	int pos = 0;
 
 	do{
-		fd = open(SERIALPORT, O_RDWR | O_NOCTTY);
+		fd = open(SERIALPORTS[pos], O_RDWR | O_NOCTTY);
 
 		if(fd < 0){
-			perror(SERIALPORT);
+			perror(SERIALPORTS[pos]);
+			pos++;
+			pos = pos % 3;
 			usleep(500);
 		}
 

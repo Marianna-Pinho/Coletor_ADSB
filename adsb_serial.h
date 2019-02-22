@@ -7,7 +7,7 @@ for the serial communication
 operations.
 =================================*/
 
-#define SERIALPORT "/dev/ttyACM0"
+//#define SERIALPORT "/dev/ttyACM0"
 #define BAUDRATE	B115200
 
 int SERIAL_open(void);

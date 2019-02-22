@@ -23,3 +23,20 @@ double getCurrentTime(){
 
   return seconds;
 }
+
+/*==============================================
+FUNCTION: getFormatedTime
+INPUT: void
+OUTPUT: a char vector pointer
+DESCRIPTION: this function gets the current time
+and returns it in the Www Mmm dd hh:mm:ss yyyy
+format, where "w" represents the week days and "m"
+represents the month names.
+================================================*/
+char* getFormatedTime(){
+  time_t timer = 0;
+
+  time(&timer);
+  return asctime(localtime(&timer));
+
+}
