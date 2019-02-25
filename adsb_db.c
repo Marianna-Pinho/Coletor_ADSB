@@ -3,6 +3,7 @@
 #include "adsb_lists.h"
 #include "adsb_time.h"
 #include "adsb_db.h"
+#include "adsb_createLog.h"
 
 /*==============================================
 FUNCTION: DB_open
@@ -24,6 +25,8 @@ sqlite3 * DB_open(char *db_name){
         return db_handler;
     }else{
         printf("Database not opened: %s\n", sqlite3_errmsg(db_handler));
+        LOG_add("DB_open", "database couldn't be opened!");
+
         return NULL;
     }
 }
@@ -63,14 +66,17 @@ int DB_saveADSBInfo(adsbMsg *msg){
     
     if(status ==  SQLITE_OK){
         printf("Data was saved successfully!\n");
+        LOG_add("DB_saveADSBInfo", "Data was saved successfully");
     }else{
         printf("Data couldn't be saved: %s\n", errmsg);
+        LOG_add("DB_saveADSBInfo", "Data couldn't be saved");
     }
 
     sqlite3_free(errmsg);
     
     if(sqlite3_close_v2(db_handler) != SQLITE_OK){
         printf("It couldn't close the database!\n");
+        LOG_add("DB_saveADSBInfo", "Database couldn't be closed");
     }
 
     return status;

@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>  // input/output generic operations
 #include "adsb_auxiliars.h"
 #include "adsb_serial.h"
+#include "adsb_createLog.h"
 
 const char *SERIALPORTS[13] = {"/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2"};
 
@@ -40,6 +41,7 @@ int SERIAL_open(void){
 	}while(fd < 0);
 
 	printf("MicroADSB_Colector: opened!\n");
+	LOG_add("SERIAL_open", "MicroADSB_Colector was opened succesfully");
 	
     return fd;
 }
@@ -61,10 +63,12 @@ int SERIAL_configure(int fd){
 	status = tcgetattr(fd, &oldsport); //It gets the currently configuration of the serial port and saves it into oldsport
 	
     if(status < 0){   //It wasn't possible get the currently configuration, probably because the port wasn't correctly opened
-		perror("Old configuration can't be got");
+		perror("Old configuration couldn't be got");
+		LOG_add("SERIAL_configure", "MicroADSB_Colector old serial port configuration couldn't be got");
 		
 		if(close(fd) < 0){ //It closes the opened serial port
-           perror("MicroADSB_Colector: serial port can't be closed!");	
+           perror("MicroADSB_Colector: serial port couldn't be closed!");	
+		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");
 		}
 
 		return -1;
@@ -85,26 +89,31 @@ int SERIAL_configure(int fd){
 	status = tcsetattr(fd, TCSANOW, &newsport);		//It saves the new configuration of the serial port, stored in newsport.
 	
     if(status < 0){
-		perror("Can't set new serial port configuration");
+		perror("It couldn't set new serial port configuration");
+		LOG_add("SERIAL_configure", "MicroADSB_Colector new serial port configuration couldn't be set");
 
 		if(close(fd) < 0){ //It closes the opened serial port
-           perror("MicroADSB_Colector: serial port can't be closed!");	
+           perror("MicroADSB_Colector: serial port couldn't be closed!");
+		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");	
 		}
 
 		return -1;
 	}
 
 	if(write(fd,"#43-02\n",7) != 7){				//#43-02 is a string of initialization that says to the device that it can start to send messages
-		perror("Can't initialize serial port\n");
+		perror("It couldn't initialize serial port\n");
+		LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be initialized");
 
 		if(close(fd) < 0){ //It closes the opened serial port
-           perror("MicroADSB_Colector: serial port can't be closed!");	
+           perror("MicroADSB_Colector: serial port couldn't be closed!");
+		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");	
 		}
 
 		return -1;
 	}
 
 	printf("MicroADSB_Colector: configured!\n");
+	LOG_add("SERIAL_configure", "MicroADSB_Colector configured");
 }
 
 /*==============================================
@@ -171,7 +180,8 @@ int SERIAL_read(int fd, char *sBuffer){
 	status = read(fd, sBuffer, 43);	 //It reads a message from the serial port. Once the message expected has the format @(48 bits + 112 bits);<CR><NL>, we expect 43 bytes of data.
 	
     if(status < 0){
-		perror("Can't read serial port");
+		perror("It couldn't read serial port");
+		LOG_add("SERIAL_read", "It couldn't read serial port");
 	}
 
 	sBuffer[status] = '\0';
@@ -201,10 +211,12 @@ int SERIAL_reconnect(int fd){
     while(1){
 		
         if(close(fd) < 0){ //It closes the opened serial port
-           perror("MicroADSB_Colector: serial port can't be closed!");	
+           perror("MicroADSB_Colector: serial port couldn't be closed!");
+		   LOG_add("SERIAL_reconnect", "MicroADSB_Colector serial port couldn't be closed");	
 		}
         else{
-			printf("MicroADSB_Colector: serial port closed!\n");	
+			printf("MicroADSB_Colector: serial port closed!\n");
+			LOG_add("SERIAL_reconnect", "MicroADSB_Colector serial port was closed");	
 		    
 			/*sleep(1); // Wait 1 second
 	        fd = SERIAL_open(); //It tries to open a new serial port for the same device
@@ -214,6 +226,7 @@ int SERIAL_reconnect(int fd){
 			sleep(1);
 			fd = SERIAL_start();
 
+			LOG_add("SERIAL_reconnect", "MicroADSB_Colector serial port was reconnected");	
 		    return fd;
 		}
 	}
@@ -243,7 +256,8 @@ char SERIAL_communicate(int* fd, char *sBuffer){
 		}
 
 		if(status == -1){ //If status == -1, probably the device is not connected. So, we try reconnect it.	
-            *fd = SERIAL_reconnect(*fd);
+           	LOG_add("SERIAL_communicate", "MicroADSB_Colector serial port was disconnected");
+		    *fd = SERIAL_reconnect(*fd);
 			printf("MicroADSB_Colector: reading!\n");
 		}	
 

@@ -6,6 +6,7 @@
 #include "adsb_auxiliars.h"
 #include "adsb_lists.h"
 #include "adsb_time.h"
+#include "adsb_createLog.h"
 
 /*===========================
 Functions used in identication
@@ -466,7 +467,12 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 
 //Catching the Callsign
 		if((1 <= getTypecode(buffer)) && (getTypecode(buffer) <= 4)){
-			getCallsign(buffer, no->callsign);
+			if(getCallsign(buffer, no->callsign) < 0){
+				printf("ADS-B Decoding Error: callsign couldn't be decoded!");
+				LOG_add("decodeMessage", "callsign couldn't be decoded");
+				
+				return NULL;
+			}
 			
 			printf("\n-------------------IDENTIFICATION----------------------------------------\n|");	
 			printf(" CALLSIGN: %s\n", no->callsign );	printf("\t\n");
@@ -480,8 +486,20 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 			no = setPosition(buffer, no);
 			
 			if((strlen(no->oeMSG[0]) != 0) && (strlen(no->oeMSG[1]) != 0)){ //It verifies if there is both messages (even and odd)
-					getAirbornePosition(no->oeMSG[0], no->oeMSG[1], no->oeTimestamp[0], no->oeTimestamp[1], &lat, &lon); //It gets the latitude and longitude
+					if(getAirbornePosition(no->oeMSG[0], no->oeMSG[1], no->oeTimestamp[0], no->oeTimestamp[1], &lat, &lon) < 0){  //It gets the latitude and longitude
+						printf("ADS-B Decoding Error: position couldn't be decoded!");
+						LOG_add("decodeMessage", "position couldn't be decoded");
+
+						return NULL;
+					}
+
 					alt = getAltitude(buffer); //It gets the altitude
+					if(alt < 0){
+						printf("ADS-B Decoding Error: altitude couldn't be decoded!");
+						LOG_add("decodeMessage", "altitude couldn't be decoded");
+
+						return NULL;
+					}
 
 					no->Longitude = lon;
 					no->Latitude = lat;
@@ -496,7 +514,12 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 //Catching the velocity
 		else if(getTypecode(buffer) == 19){
 		
-			getVelocities(buffer, &vel_h, &heading, &rateV, tag);
+			if(getVelocities(buffer, &vel_h, &heading, &rateV, tag) < 0){
+				printf("ADS-B Decoding Error: velocities couldn't be decoded!");
+				LOG_add("decodeMessage", "velocities couldn't be decoded");
+
+				return NULL;
+			}
 
 			no->horizontalVelocity = vel_h;
 			no->verticalVelocity = rateV;

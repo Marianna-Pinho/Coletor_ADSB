@@ -8,16 +8,18 @@
 #include "adsb_decoding.h"
 #include "adsb_serial.h"
 #include "adsb_db.h"
+#include "adsb_createLog.h"
 
 adsbMsg *messagesList = NULL;
 
 void suddenStop(){
 
- 	printf("\nCtrl+C...\nClosing Colector...\n");
+ 	printf("\nCtrl+C...\nClosing Collector...\n");
 
  	LIST_removeAll(&messagesList);
     
-    printf("Colector closed!\n");
+    printf("Collector closed!\n");
+    LOG_add("suddenStop", "Collector was closed");
 
  	exit(1);
 }
