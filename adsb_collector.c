@@ -40,10 +40,10 @@ int main(){
         messagesList = decodeMessage(buffer, messagesList, &node);
 
         if(isNodeComplete(node) != NULL){
-            if(DB_saveADSBInfo(node) != -1){
-                printf("Aircraft %s information saved succesfully!\n", node->ICAO);
-            }else{
+            if(DB_saveData(node) != 0){
                 printf("The aircraft information couldn't be saved!\n");
+            }else{
+                printf("Aircraft %s information saved succesfully!\n", node->ICAO);
             }
         }else{
             printf("Information is not complete!\n");
@@ -52,6 +52,5 @@ int main(){
         node = NULL;
 		memset(buffer, 0x0, 29);
     }
-
     return 0;
 }

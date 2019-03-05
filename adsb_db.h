@@ -12,5 +12,7 @@ typedef struct msg adsbMsg;
 
 sqlite3 * DB_open(char *db_name);
 int DB_saveADSBInfo(adsbMsg *msg);
+int DB_saveAirline(adsbMsg *msg);
+int DB_saveData(adsbMsg *msg);
 
 #endif
