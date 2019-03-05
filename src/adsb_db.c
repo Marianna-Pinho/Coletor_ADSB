@@ -77,6 +77,8 @@ int DB_saveADSBInfo(adsbMsg *msg){
     if(sqlite3_close_v2(db_handler) != SQLITE_OK){
         printf("It couldn't close the database!\n");
         LOG_add("DB_saveADSBInfo", "Database couldn't be closed");
+    }else{
+        printf("Database successfully closed!\n");
     }
 
     return status;
@@ -123,6 +125,8 @@ int DB_saveAirline(adsbMsg *msg){
     if(sqlite3_close_v2(db_handler) != SQLITE_OK){
         printf("It couldn't close the database!\n");
         LOG_add("DB_saveAirline", "Database couldn't be closed");
+    }else{
+        printf("Database successfully closed!\n");
     }
 
     return status;
