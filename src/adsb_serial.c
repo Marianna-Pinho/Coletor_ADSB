@@ -60,6 +60,7 @@ int SERIAL_configure(int fd){
 	int status = 0, st_read = 0;
 	struct termios newsport, oldsport;
 	
+	printf("MicroADSB_Colector: configuring...\n");
 	status = tcgetattr(fd, &oldsport); //It gets the currently configuration of the serial port and saves it into oldsport
 	
     if(status < 0){   //It wasn't possible get the currently configuration, probably because the port wasn't correctly opened
@@ -71,12 +72,12 @@ int SERIAL_configure(int fd){
 		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");
 		}
 
-		return -1;
+		return SERIAL_ERROR;
 	}
 
 	bzero(&newsport, sizeof(newsport));
 	
-    newsport.c_iflag = IXOFF | IXON | IGNBRK | IGNCR | ICRNL;     // https://www.gnu.org/software/libc/manual/html_node/Input-Modes.html
+    newsport.c_iflag = IXOFF | IXON | IGNBRK | IGNCR;     //(ICRNL this flag can be inserted) //https://www.gnu.org/software/libc/manual/html_node/Input-Modes.html
 	newsport.c_oflag = 0;							//No output control configurations are changed
 	newsport.c_cflag = CS8 | CREAD | CLOCAL; 		//It enables receiving messages
 	newsport.c_lflag = ICANON;						//It enables the canonical mode, which reads each data line available
@@ -97,7 +98,7 @@ int SERIAL_configure(int fd){
 		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");	
 		}
 
-		return -1;
+		return SERIAL_ERROR;
 	}
 
 	if(write(fd,"#43-02\n",7) != 7){				//#43-02 is a string of initialization that says to the device that it can start to send messages
@@ -109,11 +110,13 @@ int SERIAL_configure(int fd){
 		   LOG_add("SERIAL_configure", "MicroADSB_Colector serial port couldn't be closed");	
 		}
 
-		return -1;
+		return SERIAL_ERROR;
 	}
 
 	printf("MicroADSB_Colector: configured!\n");
 	LOG_add("SERIAL_configure", "MicroADSB_Colector configured");
+
+	return SERIAL_OK;
 }
 
 /*==============================================
@@ -145,8 +148,7 @@ sent throught the serial port and removes the
 visible characters of the message.
 ================================================*/
 void SERIAL_removeFL(char *msg){
-	
-    unsigned int i = 0;
+	unsigned int i = 0;
 	
     while(msg[i] != '\0'){
 		i++;
@@ -157,8 +159,37 @@ void SERIAL_removeFL(char *msg){
 
 		for(i = 0; msg[i] != '\0'; i++){ //It takes out @
 			msg[i] = msg[i+1];
-		}								
+		}	
 	}
+}
+
+/*==============================================
+FUNCTION: SERIAL_isDisconnected
+INPUT: an integer
+OUTPUT: an integer
+DESCRIPTION: this function receives a file descriptor
+and reads a message from the serial port. If it reads
+zero bytes 3 times, we will consider that the serial
+port is disconnected. The number 3 is arbitrary.
+================================================*/
+int SERIAL_isDisconnected(int fd, char *buffer){
+	int tries = 3, count = 3, status = 0;
+	
+	while(tries > 0){
+		if((status = read(fd, &buffer, 43)) <= 0){
+			count--;
+			memset(buffer, 0x0, 44);
+			usleep(500);
+		}
+		tries--;
+	}
+	
+	if((!count) || (status <= 0)){
+		return SERIAL_DISCONNECTED;
+	}
+
+	buffer[status] = '\0';
+	return SERIAL_OK;
 }
 
 /*==============================================
@@ -177,23 +208,25 @@ int SERIAL_read(int fd, char *sBuffer){
 
 	int status = 0, serial = 0;
 
-	status = read(fd, sBuffer, 43);	 //It reads a message from the serial port. Once the message expected has the format @(48 bits + 112 bits);<CR><NL>, we expect 43 bytes of data.
+	status = read(fd, sBuffer, 43);	 //It reads a message from the serial port. Once the message expected has the format @(48 bits + 112 bits);<CR><NL>, we expect 44 bytes of data. However <CR> is ignored.
 	
     if(status < 0){
+		status = 0;
 		perror("It couldn't read serial port");
 		LOG_add("SERIAL_read", "It couldn't read serial port");
 	}
 
 	sBuffer[status] = '\0';
-	//printf("M: %s\n", sBuffer);
-	
-	SERIAL_removeFL(sBuffer); //It takes out the characters @ and ;
 
 	if(sBuffer[0] == '\0'){ //If there is no messages, probably the device is not connected.
-		return -1;
+		if(SERIAL_isDisconnected(fd, sBuffer) == SERIAL_DISCONNECTED){
+			return SERIAL_DISCONNECTED;
+		}	
 	}
+	//printf("Status: %d Debug: %s\n", status, sBuffer);
+	SERIAL_removeFL(sBuffer); //It takes out the characters @ and ;
 
-	return 0;
+	return SERIAL_OK;
 }
 
 /*==============================================
@@ -235,7 +268,7 @@ int SERIAL_reconnect(int fd){
 /*==============================================
 FUNCTION: SERIAL_communicate
 INPUT: an integer and a char pointer
-OUTPUT: an integer and a string passed by reference
+OUTPUT: string passed by reference
 DESCRIPTION: this function receives a file descriptor
 and a char pointer, reads data from the serial port
 and saves it into the string referenced by the pointer.
@@ -244,25 +277,31 @@ reading. Once the device is disconnected, the function
 tries to reconnect.
 ================================================*/
 char SERIAL_communicate(int* fd, char *sBuffer){
-	
+	char buffer_aux[44]; buffer_aux[0] = '\0';
+
     int status = 1;
 
 	while(status!=0){
-		status = SERIAL_read(*fd, sBuffer);
+		status = SERIAL_read(*fd, buffer_aux);
 		
-        if(strlen(sBuffer) == 1){ //If no message has been read, we do nothing.
+        if(strlen(buffer_aux) == 1){ //If no message has been read, we do nothing.
 			status = 1;
+			memset(buffer_aux, 0x0, 44);
 			continue;
 		}
 
-		if(status == -1){ //If status == -1, probably the device is not connected. So, we try reconnect it.	
+		if(status == SERIAL_DISCONNECTED){ //If status == -1, probably the device is not connected. So, we try reconnect it.	
            	LOG_add("SERIAL_communicate", "MicroADSB_Colector serial port was disconnected");
 		    *fd = SERIAL_reconnect(*fd);
 			printf("MicroADSB_Colector: reading!\n");
 		}	
 
 	}
+	printf("Tam: %ld Aux:%s\n",strlen(buffer_aux), buffer_aux);
+	getFrame(buffer_aux);
+	printf("Tam2: %ld Aux2:%s\n",strlen(buffer_aux), buffer_aux);
+	strcpy(sBuffer, buffer_aux);
+	sBuffer[strlen(sBuffer)] = '\0';
 
-	getFrame(sBuffer);
 	return sBuffer[0];
 }

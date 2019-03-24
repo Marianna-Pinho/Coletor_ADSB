@@ -7,6 +7,11 @@ the information contained in an adsb
 message.
 =================================*/
 
+//Status Macros
+#define DECODING_ERROR -1
+#define DECODING_OK 0
+
+
 typedef struct msg adsbMsg;
 
 int getCallsign(char *msgi, char *msgf);

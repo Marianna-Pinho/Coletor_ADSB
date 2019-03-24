@@ -25,7 +25,7 @@ int getCallsign(char *msgi, char *msgf){
 
 	if((getTypecode(msgi)<1)||(getTypecode(msgi)>4)){ //Identification messages are between 1 and 4
 		//printf("It's not an Identification Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 
 	char cs_table[] = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######";
@@ -56,7 +56,9 @@ int getCallsign(char *msgi, char *msgf){
         msgf[i-1] = '\0';
     }else{
         msgf[i] = '\0';
-    }				
+    }
+
+	return DECODING_OK;				
 }
 
 /*===========================
@@ -81,7 +83,7 @@ int getVelocities(char *msgi, float *speed, float *head, int *rateCD, char *tag)
 
 	if(getTypecode(msgi)!= 19){ //Velocity messages have typecode equal to 19
 		//printf("It's not a Airbone Velocity Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 
 	char msgbin[113], msgAUX[113];
@@ -160,6 +162,8 @@ int getVelocities(char *msgi, float *speed, float *head, int *rateCD, char *tag)
 	}else{
 		*rateCD = *rateCD;//Vr;					//UP
 	}
+
+	return DECODING_OK;
 }
 
 /*===========================
@@ -197,7 +201,7 @@ even or odd type.
 int getPositionType(char *msgi){
 	if(!isPositionMessage(msgi)){ //It verifies if the data is about position
 		//printf("It's not a Position Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 
 	char msgbin[113];							
@@ -218,7 +222,7 @@ binary to integer.
 int getCPRLatitude(char *msgi){
 	if(!isPositionMessage(msgi)){
 		//printf("It's not a Position Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 	char msgbin[113];
 	hex2bin(msgi,msgbin);
@@ -241,7 +245,7 @@ binary to integer.
 int getCPRLongitude(char *msgi){
 	if(!isPositionMessage(msgi)){
 		//printf("It's not a Position Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 
 	char msgbin[113];
@@ -318,7 +322,7 @@ int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO,
 	}
 
 	if(getCprNL(latEven) != getCprNL(latOdd)){		//It checks if the odd and even latitudes are in the same latitude zone
-		return -1;								//If they aren't, the longitude can't be calculated and the decoding stops.
+		return DECODING_ERROR;								//If they aren't, the longitude can't be calculated and the decoding stops.
 	}
 
 	/* To calculate the longitude */
@@ -343,6 +347,8 @@ int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO,
 	if(*lon > 180){	 //If the longitude is larger than 180, we use negative values
 		*lon = *lon - 360;
 	}
+
+	return DECODING_OK;
 }
 
 /*==============================================
@@ -357,7 +363,7 @@ measure "feet".
 int getAltitude(char *msgi){ 
 	if(!isPositionMessage(msgi)){
 		//printf("It's not a Airbone Position Message\n");
-		return -1;
+		return DECODING_ERROR;
 	}
 
 	char msgbin[113], msgAUX[113];
@@ -379,7 +385,7 @@ int getAltitude(char *msgi){
 
 	}else{
 		//The code for multiples of 100 is not implemented yet
-		return -1;
+		return DECODING_ERROR;
 	}
 }
 
@@ -468,7 +474,7 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 //Catching the Callsign
 		if((1 <= getTypecode(buffer)) && (getTypecode(buffer) <= 4)){
 			if(getCallsign(buffer, no->callsign) < 0){
-				printf("ADS-B Decoding Error: callsign couldn't be decoded!");
+				printf("ADS-B Decoding Error: callsign couldn't be decoded!\n");
 				LOG_add("decodeMessage", "callsign couldn't be decoded");
 				
 				return NULL;
@@ -487,7 +493,7 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 			
 			if((strlen(no->oeMSG[0]) != 0) && (strlen(no->oeMSG[1]) != 0)){ //It verifies if there is both messages (even and odd)
 					if(getAirbornePosition(no->oeMSG[0], no->oeMSG[1], no->oeTimestamp[0], no->oeTimestamp[1], &lat, &lon) < 0){  //It gets the latitude and longitude
-						printf("ADS-B Decoding Error: position couldn't be decoded!");
+						printf("ADS-B Decoding Error: position couldn't be decoded!\n");
 						LOG_add("decodeMessage", "position couldn't be decoded");
 
 						return NULL;
@@ -495,7 +501,7 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 
 					alt = getAltitude(buffer); //It gets the altitude
 					if(alt < 0){
-						printf("ADS-B Decoding Error: altitude couldn't be decoded!");
+						printf("ADS-B Decoding Error: altitude couldn't be decoded!\n");
 						LOG_add("decodeMessage", "altitude couldn't be decoded");
 
 						return NULL;
@@ -515,7 +521,7 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 		else if(getTypecode(buffer) == 19){
 		
 			if(getVelocities(buffer, &vel_h, &heading, &rateV, tag) < 0){
-				printf("ADS-B Decoding Error: velocities couldn't be decoded!");
+				printf("ADS-B Decoding Error: velocities couldn't be decoded!\n");
 				LOG_add("decodeMessage", "velocities couldn't be decoded");
 
 				return NULL;

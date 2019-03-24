@@ -35,4 +35,4 @@ all:
 	$(CC) -o ./$(PROJ_NAME) $(C_SOURCE) $(LDFLAGS)
 
 clean:
-	rm -rf ./src/$(PROJ_NAME) *~
+	rm -rf ./src/$(PROJ_NAME) $(PROJ_NAME) *~

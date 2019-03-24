@@ -52,6 +52,7 @@ int DB_saveADSBInfo(adsbMsg *msg){
         return -1;  //database couldn't be opened.
     }
 
+printf("Tentado salvar mensagem no db\n");
     sqlText = sqlite3_mprintf(
         "INSERT INTO radarlivre_api_adsbinfo(collectorKey, modeSCode, callsign, latitude, longitude," \
         "altitude, verticalVelocity, horizontalVelocity, groundTrackHeading, timestamp, timestampSent," \

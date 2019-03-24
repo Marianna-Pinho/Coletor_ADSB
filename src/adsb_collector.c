@@ -17,7 +17,7 @@ void suddenStop(){
  	printf("\nCtrl+C...\nClosing Collector...\n");
 
  	LIST_removeAll(&messagesList);
-    
+ 
     printf("Collector closed!\n");
     LOG_add("suddenStop", "Collector was closed");
 
@@ -33,10 +33,8 @@ int main(){
     serialPort = SERIAL_start();
 
     while(1){   //Polling method
-        if(SERIAL_communicate(&serialPort, buffer) == 10){
-            continue;
-        }
-
+    
+        SERIAL_communicate(&serialPort, buffer);
         messagesList = decodeMessage(buffer, messagesList, &node);
 
         if(isNodeComplete(node) != NULL){
