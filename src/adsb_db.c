@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <sqlite3.h>
+#include <stdlib.h>
+#include <string.h>
 #include "adsb_lists.h"
 #include "adsb_time.h"
 #include "adsb_db.h"
@@ -32,6 +34,31 @@ sqlite3 * DB_open(char *db_name){
 }
 
 /*==============================================
+FUNCTION: DB_close
+INPUT: a sqlite3 pointer and two char vectors
+OUTPUT: void
+DESCRIPTION: this function receives the database
+handler and attempts to close the database.
+In addition, it frees both char vectors: error
+message and sql query.
+================================================*/
+void DB_close(sqlite3 **db_handler, char**errmsg, char**sqlText){
+
+    if(sqlite3_close_v2(*db_handler) != SQLITE_OK){
+        printf("It couldn't close the database!\n");
+        LOG_add("DB_saveADSBInfo", "Database couldn't be closed");
+    }else{
+        printf("Database successfully closed!\n");
+    }
+
+    sqlite3_free(*errmsg);
+    *errmsg = NULL;
+    sqlite3_free(*sqlText);
+    *sqlText = NULL;
+    *db_handler = NULL;
+}
+
+/*==============================================
 FUNCTION: DB_saveADSBInfo
 INPUT: a char vector
 OUTPUT: an integer
@@ -42,26 +69,43 @@ contains 0 (SQLITE_OK). Otherwise, contains the value
 of the constant that represents the error.
 ================================================*/
 int DB_saveADSBInfo(adsbMsg *msg){
-    int status = 0;
+    int status = -1;    //-1 we need assuming that nothings was saved.
     char *sqlText = NULL, *errmsg = NULL;
     sqlite3 *db_handler = NULL;
     
-    db_handler = DB_open(DATABASE);
+    //It's recommended to call this function prior to any other from sqlite (https://www.sqlite.org/c3ref/initialize.html)
+    if(sqlite3_initialize() != SQLITE_OK){
+        printf("It wasn't possible to initialize SQLITE!\n");
+        LOG_add("DB_saveADSBInfo", "It wasn't possible to initialize SQLITE");
 
-    if(db_handler == NULL){
-        return -1;  //database couldn't be opened.
+        return DATABASE_ERROR;
     }
 
-printf("Tentado salvar mensagem no db\n");
+    db_handler = DB_open(DATABASE);
+    
+    if(db_handler == NULL){
+        sqlite3_shutdown();
+        return DATABASE_ERROR;  //database couldn't be opened.
+    }
+
     sqlText = sqlite3_mprintf(
-        "INSERT INTO radarlivre_api_adsbinfo(collectorKey, modeSCode, callsign, latitude, longitude," \
-        "altitude, verticalVelocity, horizontalVelocity, groundTrackHeading, timestamp, timestampSent," \
-        "messageDataId, messageDataPositionEven, messageDataPositionOdd, messageDataVelocity)"\
-        " VALUES (\"%q\", \"%q\", \"%q\", %f, %f, %d, %d, %f, %f, %lf, %lf, \"%q\", \"%q\", \"%q\", \"%q\");", 
+        "INSERT INTO radarlivre_api_adsbinfo(collectorKey,modeSCode,callsign,latitude,longitude," \
+        "altitude,verticalVelocity,horizontalVelocity,groundTrackHeading,timestamp,timestampSent," \
+        "messageDataId,messageDataPositionEven,messageDataPositionOdd,messageDataVelocity)"\
+        "VALUES(\"%q\", \"%q\", \"%q\", %f, %f, %d, %d, %f, %f, %lf, %lf, \"%q\", \"%q\", \"%q\", \"%q\");", 
         msg->COLLECTOR_ID, msg->ICAO, msg->callsign, msg->Latitude, msg->Longitude, msg->Altitude,
-        msg->verticalVelocity, msg->horizontalVelocity, msg->groundTrackHeading, msg->oeTimestamp[msg->lastTime], 
-        msg->oeTimestamp[msg->lastTime], msg->messageID, msg->oeMSG[0], msg->oeMSG[1], msg->mensagemVEL
+        msg->verticalVelocity, msg->horizontalVelocity, msg->groundTrackHeading, msg->oeTimestamp[0], 
+        msg->oeTimestamp[1], msg->messageID, msg->oeMSG[msg->lastTime], msg->oeMSG[msg->lastTime], msg->mensagemVEL
     );
+
+    if(sqlText == NULL){
+        printf("SQLITE query couldn't be created!\n");
+        LOG_add("DB_saveADSBInfo", "SQLITE query couldn't be create");
+        DB_close(&db_handler, &errmsg, &sqlText);
+        sqlite3_shutdown();
+
+        return  DATABASE_ERROR;
+    }
 
     status = sqlite3_exec(db_handler, sqlText, NULL, NULL, &errmsg); //It tries to execute the sql statement
     
@@ -72,15 +116,9 @@ printf("Tentado salvar mensagem no db\n");
         printf("Data couldn't be saved: %s\n", errmsg);
         LOG_add("DB_saveADSBInfo", "Data couldn't be saved");
     }
-
-    sqlite3_free(errmsg);
-    
-    if(sqlite3_close_v2(db_handler) != SQLITE_OK){
-        printf("It couldn't close the database!\n");
-        LOG_add("DB_saveADSBInfo", "Database couldn't be closed");
-    }else{
-        printf("Database successfully closed!\n");
-    }
+ 
+    DB_close(&db_handler, &errmsg, &sqlText);
+    sqlite3_shutdown(); //It's recommended to call this function at the end of a sqlite process
 
     return status;
 }
@@ -96,14 +134,22 @@ contains 0 (SQLITE_OK). Otherwise, contains the value
 of the constant that represents the error.
 ================================================*/
 int DB_saveAirline(adsbMsg *msg){
-    int status = 0;
+    int status = -1; // we need assuming that nothings was saved.
     char *sqlText = NULL, *errmsg = NULL;
     sqlite3 *db_handler = NULL;
+
+    //It's recommended to call this function prior to any other from sqlite (https://www.sqlite.org/c3ref/initialize.html)
+    if(sqlite3_initialize() != SQLITE_OK){
+        printf("It wasn't possible to initialize SQLITE!\n");
+        LOG_add("DB_saveAirline", "SQLITE query couldn't be create");
+        return DATABASE_ERROR;
+    }
 
     db_handler = DB_open(DATABASE);
 
     if(db_handler == NULL){
-        return -1;  //database couldn't be opened.
+        sqlite3_shutdown();
+        return DATABASE_ERROR;  //database couldn't be opened.
     }
 
     sqlText = sqlite3_mprintf(
@@ -111,6 +157,14 @@ int DB_saveAirline(adsbMsg *msg){
         msg->ICAO, msg->callsign
     );
 
+    if(sqlText == NULL){
+        printf("SQLITE query couldn't be created!\n");
+        LOG_add("DB_saveAirline", "SQLITE query couldn't be create");
+        DB_close(&db_handler, &errmsg, &sqlText);
+        sqlite3_shutdown();
+
+        return  DATABASE_ERROR;
+    }
     status = sqlite3_exec(db_handler, sqlText, NULL, NULL, &errmsg); //It tries to execute the sql statement
 
     if(status ==  SQLITE_OK){
@@ -121,14 +175,8 @@ int DB_saveAirline(adsbMsg *msg){
         LOG_add("DB_saveAirline", "Data couldn't be saved");
     }
 
-     sqlite3_free(errmsg);
-
-    if(sqlite3_close_v2(db_handler) != SQLITE_OK){
-        printf("It couldn't close the database!\n");
-        LOG_add("DB_saveAirline", "Database couldn't be closed");
-    }else{
-        printf("Database successfully closed!\n");
-    }
+    DB_close(&db_handler, &errmsg, &sqlText);
+    sqlite3_shutdown(); //It's recommended to call this function at the end of a sqlite process
 
     return status;
 }
@@ -145,10 +193,18 @@ Otherwise, contains the value of the constant that
 represents the error.
 ================================================*/
 int DB_saveData(adsbMsg *msg){
-    int status1 = 0, status2 = 0;
+    int status1 = -1, status2 = -1, tries = 3;
 
-    status1 = DB_saveADSBInfo(msg);
-    status2 = DB_saveAirline(msg);
+    while((status1 != 0) && (tries > 0)){
+         status1 = DB_saveADSBInfo(msg);
+         tries--;
+    }
+
+    tries = 3;
+    while((status2 != 0) && (tries > 0)){
+         status2 = DB_saveAirline(msg);
+         tries--;
+    }
 
     if(status1 != 0){
         return status1;

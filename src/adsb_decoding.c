@@ -421,6 +421,7 @@ adsbMsg* setPosition(char *msg, adsbMsg *node){
 	strcpy((node->oeMSG[typeMsg]), msg);	//It saves the new message
 	node->oeMSG[typeMsg][28] = '\0';
 	node->oeTimestamp[typeMsg] = ctime;	//It saves the time of arrive of the new message
+	node->lastTime = typeMsg;
 
 	return node;
 }
@@ -479,7 +480,9 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 				
 				return NULL;
 			}
-			
+			strcpy(no->messageID, buffer);
+			no->messageID[strlen(buffer)] = '\0';
+
 			printf("\n-------------------IDENTIFICATION----------------------------------------\n|");	
 			printf(" CALLSIGN: %s\n", no->callsign );	printf("\t\n");
 			printf("--------------------------------------------------------------------------\n");
@@ -568,14 +571,34 @@ adsbMsg* isNodeComplete(adsbMsg *node){
 	if((strlen(node->oeMSG[0]) != 0) && (strlen(node->oeMSG[1]) != 0)){ //It verifies if there are the two position messages
 		if((node->ICAO[0] != 0) && (node->Altitude != 0)){	// It verifies if there is an ICAO and an Altitude
 			
-			node->oeMSG[!(node->lastTime)][0] = '\0'; //It cleans up the oldest message			
-			node->Altitude = 0;
-			node->Latitude = 0;
-			node->Longitude = 0;
+			//node->oeMSG[!(node->lastTime)][0] = '\0'; //It cleans up the oldest message			
+			//node->Altitude = 0;
+			//node->Latitude = 0;
+			//node->Longitude = 0;
 
 			return node;
 		}
 	}
 
 	return NULL;
+}
+
+/*==============================================
+FUNCTION: clearMinimalInfo
+INPUT: an adsbMsg pointer
+OUTPUT: an integer
+DESCRIPTION: this function receives an adsbMsg node
+and clears the minimal information fields to prevent
+the algorithm of entering in isNodeComplete using
+old information.
+================================================*/
+void clearMinimalInfo(adsbMsg *node){
+	if(node == NULL){
+		return;
+	}
+
+	node->oeMSG[!(node->lastTime)][0] = '\0'; //It cleans up the oldest message			
+	node->Altitude = 0;
+	node->Latitude = 0;
+	node->Longitude = 0;
 }
