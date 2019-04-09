@@ -28,6 +28,7 @@ adsbMsg* LIST_create(char *ICAO){
 	msg->oeMSG[1][0] = '\0';
 	msg->oeTimestamp[0] = 0;
 	msg->oeTimestamp[1] = 0;
+	msg->lastTime = 0;
 	msg->Latitude = 0;	//Change 0 for -1. Verifies if nothing depends on it.
 	msg->Longitude = 0;
 	msg->Altitude = 0;
@@ -66,7 +67,7 @@ adsbMsg *LIST_insert(char *ICAO, adsbMsg* list){
 	aux2->next->next = NULL;            //It adds a new node in the end of the list and makes the node to point to NULL;
 
     strcpy(aux2->next->ICAO, ICAO);
-	aux2->next->ICAO[6] = '\0';
+	aux2->next->ICAO[strlen(ICAO)] = '\0';
 	
 	strcpy(aux2->next->COLLECTOR_ID, collectorId); 
 	aux2->next->COLLECTOR_ID[strlen(collectorId)] = '\0';
@@ -76,6 +77,7 @@ adsbMsg *LIST_insert(char *ICAO, adsbMsg* list){
 	aux2->next->oeMSG[1][0] = '\0';
 	aux2->next->oeTimestamp[0] = 0;
 	aux2->next->oeTimestamp[1] = 0;
+	aux2->next->lastTime = 0;
 	aux2->next->Latitude = 0;
 	aux2->next->Longitude = 0;
 	aux2->next->Altitude = 0;

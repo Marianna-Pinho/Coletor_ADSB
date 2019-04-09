@@ -7,6 +7,11 @@ the information contained in an adsb
 message.
 =================================*/
 
+//Status Macros
+#define DECODING_ERROR -1
+#define DECODING_OK 0
+
+
 typedef struct msg adsbMsg;
 
 int getCallsign(char *msgi, char *msgf);
@@ -15,9 +20,9 @@ int isPositionMessage(char *msgi);
 int getPositionType(char *msgi);
 int getCPRLatitude(char *msgi);
 int getCPRLongitude(char *msgi);
-int getCprNL(float lat);
 int getAirbornePosition(char *msgEVEN, char *msgODD, double timeE, double timeO, float *lat, float *lon);
 int getAltitude(char *msgi);
+void clearMinimalInfo(adsbMsg *node);
 adsbMsg* isNodeComplete(adsbMsg *node);
 adsbMsg* setPosition(char *msg, adsbMsg *node);
 adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof);

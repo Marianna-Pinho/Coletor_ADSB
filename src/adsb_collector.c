@@ -8,16 +8,18 @@
 #include "adsb_decoding.h"
 #include "adsb_serial.h"
 #include "adsb_db.h"
+#include "adsb_createLog.h"
 
 adsbMsg *messagesList = NULL;
 
 void suddenStop(){
 
- 	printf("\nCtrl+C...\nClosing Colector...\n");
+ 	printf("\nCtrl+C...\nClosing Collector...\n");
 
  	LIST_removeAll(&messagesList);
-    
-    printf("Colector closed!\n");
+ 
+    printf("Collector closed!\n");
+    LOG_add("suddenStop", "Collector was closed");
 
  	exit(1);
 }
@@ -31,17 +33,15 @@ int main(){
     serialPort = SERIAL_start();
 
     while(1){   //Polling method
-        if(SERIAL_communicate(&serialPort, buffer) == 10){
-            continue;
-        }
-
+    
+        SERIAL_communicate(&serialPort, buffer);
         messagesList = decodeMessage(buffer, messagesList, &node);
 
         if(isNodeComplete(node) != NULL){
-            if(DB_saveADSBInfo(node) != -1){
-                printf("Aircraft %s information saved succesfully!\n", node->ICAO);
-            }else{
+            if(DB_saveData(node) != 0){
                 printf("The aircraft information couldn't be saved!\n");
+            }else{
+                printf("Aircraft %s information saved succesfully!\n", node->ICAO);
             }
         }else{
             printf("Information is not complete!\n");
@@ -50,6 +50,5 @@ int main(){
         node = NULL;
 		memset(buffer, 0x0, 29);
     }
-
     return 0;
 }

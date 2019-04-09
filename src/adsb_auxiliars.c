@@ -140,10 +140,11 @@ void getFrame(char *msg){
 		strncpy(msg, &msg[12], 28);
 		msg[28] = '\0';
 
-	}else{
+	}else if(strlen(msg) == 26){
 		strncpy(msg, &msg[12], 14);
 		msg[14] = '\0';
-
+	}else{
+		msg[0] = '\0';
 	}
 }
 
