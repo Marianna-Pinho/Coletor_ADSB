@@ -11,6 +11,7 @@ operations.
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
 #define TIMEOUT "1000000000"
+#define LIMIT_DIFF_TIME 10
 
 #define TIMER_ERROR -1
 #define TIMER_OK    0

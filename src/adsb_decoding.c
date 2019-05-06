@@ -446,6 +446,8 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 	heading = 0.0, vel_h = 0.0;
 	
 	adsbMsg* no = NULL;
+	static adsbMsg* LastNode = NULL;
+
 
 	if((getDownlinkFormat(buffer) == 17) && (strlen(buffer) == 28)){ //It verifies if the message received is of ADS-B type
 		printf("\n\n***********ADSB MESSAGE*************\n");
@@ -455,11 +457,11 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 		getICAO(buffer, icao);
 		
 		if(messages == NULL){
-			messages = LIST_create(icao);	//If the list of messages is empty, we create the first node
+			messages = LIST_create(icao, &LastNode);	//If the list of messages is empty, we create the first node
 			no = messages;
 
-		}else{
-			if((no = LIST_insert(icao, messages)) == NULL){ //It tries to insert a new node
+		}else{ //Essa parte do código precisa de uma atenção especial, porque pode estar falha
+			if((no = LIST_insert(icao, messages, &LastNode)) == NULL){ //It tries to insert a new node
 				if((no = LIST_find(icao, messages)) == NULL){
 					perror("ICAO not found");	
 					return messages;
@@ -543,14 +545,21 @@ adsbMsg* decodeMessage(char* buffer, adsbMsg* messages, adsbMsg** nof){
 
 		}
 	
+		//It reorders the messages list according with the update time
+		no->uptadeTime = getCurrentTime();
+		if((LastNode = LIST_orderByUpdate(no->ICAO, LastNode, &messages)) == NULL){
+			printf("It wasn't possible to sort the list\n");
+		}
+		
 	}else{
 		printf("\n\n###############No ADS-B Message#####################\n");
 		printf("|Message: %s\n", buffer);
 	}
 
 	memset(buffer, 0x0, 29);
-	
+
 	*nof = no;
+
 	return messages;
 }
 

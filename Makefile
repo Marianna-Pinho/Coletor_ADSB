@@ -26,7 +26,7 @@ CC_FLAGS = -c        \
            -pedantic 
 
 #Library flags
-LDFLAGS = -lm -l sqlite3
+LDFLAGS = -lm -l sqlite3 -lrt
 #
 # Compilation  and linking
 #
