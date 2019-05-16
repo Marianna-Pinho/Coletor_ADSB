@@ -58,7 +58,7 @@ handler.
 int TIMER_setSignalHandler(void (*handler)(int, siginfo_t*, void*), int timer_signal){
     struct sigaction sa;
 
-    sa.sa_flags = SA_SIGINFO;
+    sa.sa_flags = SA_SIGINFO; // | SA_RESTART;
     sa.sa_sigaction = handler;
     sigemptyset(&sa.sa_mask);
 

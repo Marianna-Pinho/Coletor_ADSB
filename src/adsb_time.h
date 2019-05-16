@@ -10,7 +10,8 @@ operations.
 ================================================*/
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
-#define TIMEOUT "1000000000"
+#define TIMEOUT "60000000000"
+//This says that the messagws can't be older than 10 seconds
 #define LIMIT_DIFF_TIME 10
 
 #define TIMER_ERROR -1

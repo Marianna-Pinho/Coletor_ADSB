@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 #include "adsb_auxiliars.h"
 #include "adsb_lists.h"
 #include "adsb_time.h"
@@ -13,8 +14,8 @@
 adsbMsg *messagesList = NULL;
 
 volatile int timer_flag = 0;
-static void timerHandler(int sig, siginfo_t *si, void *uc)
-{
+
+static void timerHandler(int sig, siginfo_t *si, void *uc){
     timer_flag = 1;
 }
 
@@ -47,6 +48,7 @@ int main(){
     while(1){   //Polling method
     
         SERIAL_communicate(&serialPort, buffer);
+        
         messagesList = decodeMessage(buffer, messagesList, &node);
 
         if(isNodeComplete(node) != NULL){
@@ -62,11 +64,13 @@ int main(){
         node = NULL;
 		memset(buffer, 0x0, 29);
 
-        //It cleans the old nodes in the messages list
+        // //It cleans the old nodes in the messages list
         if(timer_flag){
             messagesList = LIST_delOldNodes(messagesList);
             timer_flag = 0;
         }
+
+        
 
     }
     return 0;
