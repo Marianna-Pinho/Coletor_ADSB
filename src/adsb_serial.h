@@ -12,8 +12,9 @@ operations.
 
 //Status Macros
 #define SERIAL_ERROR -1
-#define SERIAL_OK 0
-#define SERIAL_DISCONNECTED -1
+#define SERIAL_OK 1
+#define SERIAL_DISCONNECTED 0
+#define SERIAL_INTERRUPTED  -1
 
 int SERIAL_open(void);
 int SERIAL_configure(int fd);

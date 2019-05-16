@@ -42,6 +42,7 @@ int SERIAL_open(void){
 
 	printf("MicroADSB_Colector: opened!\n");
 	LOG_add("SERIAL_open", "MicroADSB_Colector was opened succesfully");
+	printf("MicroADSB_Colector: configuring...\n");
 	
     return fd;
 }
@@ -60,7 +61,6 @@ int SERIAL_configure(int fd){
 	int status = 0, st_read = 0;
 	struct termios newsport, oldsport;
 	
-	printf("MicroADSB_Colector: configuring...\n");
 	status = tcgetattr(fd, &oldsport); //It gets the currently configuration of the serial port and saves it into oldsport
 	
     if(status < 0){   //It wasn't possible get the currently configuration, probably because the port wasn't correctly opened
@@ -176,19 +176,31 @@ int SERIAL_isDisconnected(int fd, char *buffer){
 	int tries = 3, count = 3, status = 0;
 	
 	while(tries > 0){
-		if((status = read(fd, &buffer, 43)) <= 0){
+		if(((status = read(fd, &buffer, 43)) == 0)){
 			count--;
-			memset(buffer, 0x0, 44);
+			memset(buffer, 0x0, 29);
 			usleep(500);
 		}
 		tries--;
 	}
 	
-	if((!count) || (status <= 0)){
-		return SERIAL_DISCONNECTED;
+	//It verifies if a timer interrupt occured
+	if((status == -1) && (errno == EINTR)){
+		memset(buffer, 0x0, 29);
+
+		return SERIAL_INTERRUPTED;
 	}
 
 	buffer[status] = '\0';
+	
+	//It verifies if the serial is disconnected even after the three tries
+	if((!count) || ((status == 0) && strlen(buffer) == 0)){
+		memset(buffer,0x0, 29);
+
+		return SERIAL_DISCONNECTED;
+	}
+	
+	
 	return SERIAL_OK;
 }
 
@@ -209,24 +221,29 @@ int SERIAL_read(int fd, char *sBuffer){
 	int status = 0, serial = 0;
 
 	status = read(fd, sBuffer, 43);	 //It reads a message from the serial port. Once the message expected has the format @(48 bits + 112 bits);<CR><NL>, we expect 44 bytes of data. However <CR> is ignored.
-	
-    if(status < 0){
-		status = 0;
-		perror("It couldn't read serial port");
-		LOG_add("SERIAL_read", "It couldn't read serial port");
+
+	//It verifies if a timer interrupt occurred
+    if((status < 0) && (errno == EINTR)){
+		perror("It couldn't read serial port due to timer interrupt");
+		LOG_add("SERIAL_read", "It couldn't read serial port due to timer interrupt");
+		memset(sBuffer, 0x0, 29);
+
+		return SERIAL_INTERRUPTED;
 	}
 
 	sBuffer[status] = '\0';
 
-	if(sBuffer[0] == '\0'){ //If there is no messages, probably the device is not connected.
-		if(SERIAL_isDisconnected(fd, sBuffer) == SERIAL_DISCONNECTED){
+	if((status == 0) && (sBuffer[0] == '\0')){ //If there is no messages, probably the device is not connected.
+		
+		if((status = SERIAL_isDisconnected(fd, sBuffer)) == SERIAL_DISCONNECTED){
+			
 			return SERIAL_DISCONNECTED;
 		}	
 	}
-	//printf("Status: %d Debug: %s\n", status, sBuffer);
+	
 	SERIAL_removeFL(sBuffer); //It takes out the characters @ and ;
 
-	return SERIAL_OK;
+	return status;
 }
 
 /*==============================================
@@ -279,29 +296,34 @@ tries to reconnect.
 char SERIAL_communicate(int* fd, char *sBuffer){
 	char buffer_aux[44]; buffer_aux[0] = '\0';
 
-    int status = 1;
+    int status = SERIAL_DISCONNECTED;
 
-	while(status!=0){
+	//Using this while, some timer interrupts will be ignored. This happens because, if
+	//the serial was disconnected, when it to arrive from the reconnect function, the status
+	//will remain equal to SERIAL_DISCONNECTED, leading to a re-reading of the serial.
+	//The question is: do we let this while in that way?
+	while(status == SERIAL_DISCONNECTED){
+		
 		status = SERIAL_read(*fd, buffer_aux);
 		
-        if(strlen(buffer_aux) == 1){ //If no message has been read, we do nothing.
-			status = 1;
-			memset(buffer_aux, 0x0, 44);
-			continue;
-		}
+        // if(strlen(buffer_aux) == 1){ //If a special character was read, we do nothing.
+		// 	status = SERIAL_DISCONNECTED;
+		// 	memset(buffer_aux, 0x0, 29);
+		// 	continue;
+		// }
 
-		if(status == SERIAL_DISCONNECTED){ //If status == -1, probably the device is not connected. So, we try reconnect it.	
+		if(status == SERIAL_DISCONNECTED){ //If status == 0, probably the device is not connected. So, we try reconnect it.	
            	LOG_add("SERIAL_communicate", "MicroADSB_Colector serial port was disconnected");
 		    *fd = SERIAL_reconnect(*fd);
 			printf("MicroADSB_Colector: reading!\n");
 		}	
 
 	}
-	printf("Tam: %ld Aux:%s\n",strlen(buffer_aux), buffer_aux);
+	
 	getFrame(buffer_aux);
-	printf("Tam2: %ld Aux2:%s\n",strlen(buffer_aux), buffer_aux);
+	
 	strcpy(sBuffer, buffer_aux);
 	sBuffer[strlen(sBuffer)] = '\0';
-
+	
 	return sBuffer[0];
 }

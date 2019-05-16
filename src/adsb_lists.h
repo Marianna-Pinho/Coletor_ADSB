@@ -38,6 +38,7 @@ typedef struct msg{
 	
 	double oeTimestamp[2];
     int lastTime;
+	double uptadeTime; //field used to order the list. It isn't sent to the server.
     
     //ADSB position
 	float Latitude;
@@ -59,10 +60,13 @@ typedef struct msg{
 	struct msg *next;
 }adsbMsg;
 
-adsbMsg* LIST_create(char *ICAO);
-adsbMsg* LIST_insert(char *ICAO, adsbMsg* list);
+
+adsbMsg* LIST_create(char *ICAO, adsbMsg**LastNode);
+adsbMsg* LIST_insert(char *ICAO, adsbMsg* list, adsbMsg**LastNode);
 adsbMsg* LIST_find(char* ICAO, adsbMsg* list);
 adsbMsg* LIST_removeOne(char* ICAO, adsbMsg** list);
 void	 LIST_removeAll(adsbMsg** list);
+adsbMsg* LIST_orderByUpdate(char *ICAO, adsbMsg *lastNode, adsbMsg **list);
+adsbMsg * LIST_delOldNodes(adsbMsg *messages);
 
 #endif
