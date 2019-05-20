@@ -56,6 +56,7 @@ int main(){
                 printf("The aircraft information couldn't be saved!\n");
             }else{
                 printf("Aircraft %s information saved succesfully!\n", node->ICAO);
+                clearMinimalInfo(node);
             }
         }else{
             printf("Information is not complete!\n");
