@@ -48,18 +48,22 @@ int main(){
     while(1){   //Polling method
     
         SERIAL_communicate(&serialPort, buffer);
-        
-        messagesList = decodeMessage(buffer, messagesList, &node);
 
-        if(isNodeComplete(node) != NULL){
-            if(DB_saveData(node) != 0){
-                printf("The aircraft information couldn't be saved!\n");
+        //If CRC returns 1, the message is correct. Otherwise, we don't do anything with the message.
+        if(CRC_verifyMsg(buffer)){
+            
+            messagesList = decodeMessage(buffer, messagesList, &node);
+
+            if(isNodeComplete(node) != NULL){
+                if(DB_saveData(node) != 0){
+                    printf("The aircraft information couldn't be saved!\n");
+                }else{
+                    printf("Aircraft %s information saved succesfully!\n", node->ICAO);
+                    clearMinimalInfo(node);
+                }
             }else{
-                printf("Aircraft %s information saved succesfully!\n", node->ICAO);
-                clearMinimalInfo(node);
+                printf("Information is not complete!\n");
             }
-        }else{
-            printf("Information is not complete!\n");
         }
 
         node = NULL;
@@ -70,8 +74,6 @@ int main(){
             messagesList = LIST_delOldNodes(messagesList);
             timer_flag = 0;
         }
-
-        
 
     }
     return 0;

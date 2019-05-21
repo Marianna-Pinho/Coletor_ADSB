@@ -223,3 +223,57 @@ int getLarger(int a, int b){
 		return b;
 	}
 }
+
+/*==============================================
+FUNCTION: CRC_verifyMsg
+INPUT: a char vector
+OUTPUT: an integer
+DESCRIPTION: this function receives an adsb message
+and returns if the received message is correct or
+not, applying CRC (Cyclic Redundancy Check). If this
+functions returns 0, the message has parity erros.
+Otherwise, the function returns 1.
+================================================*/
+int CRC_verifyMsg(char *msg){
+
+	char GENERATOR[] = "1111111111111010000001001";
+
+	char msgbin[strlen(msg)*4+1];
+	char *remainder = NULL;
+	int pos_msg=0, pos_gen=0, len_msg = 0;
+	
+	hex2bin(msg,msgbin);
+	len_msg = strlen(msgbin);
+
+	//We are only dealing with messages of length 112.
+	//So, messages shorter than this length are not verified.
+	if(len_msg < LEN_ES_MSG){
+		return 0;
+	}
+
+	//It performs the arithmetic division in module 2 (Check)
+	unsigned int len_gen = strlen(GENERATOR);
+	for(pos_msg = 0; pos_msg < len_msg-24; pos_msg++){	
+		if(msgbin[pos_msg] == '1'){
+			for(pos_gen = 0; pos_gen < len_gen; pos_gen++){
+				if((msgbin[pos_msg+pos_gen]-48) ^ (GENERATOR[pos_gen]-48)){
+					msgbin[pos_msg+pos_gen]='1';
+				}else{
+					msgbin[pos_msg+pos_gen]='0';
+				}
+			}
+		}
+	}	
+
+	printf("%s\n",msgbin);
+	
+	//If the remainder of the division is zero, the message is correct and we return 1.
+	//Otherwise, we return 0.
+	for(pos_msg = 0; pos_msg < len_msg; pos_msg++){
+		if(msgbin[pos_msg] == '1'){
+			return 0;
+		}
+	}
+
+	return 1;
+}
