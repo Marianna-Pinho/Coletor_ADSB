@@ -6,6 +6,9 @@ These functions are auxiliars of
 other functions in the system.
 =================================*/
 
+#define LEN_ES_MSG  112
+
+
 int bin2int(char *msgbin);
 int hex2int(char caractere);
 void int2bin(int num, char *msgbin);
@@ -17,5 +20,6 @@ void getData(char *msgi, char *msgf);
 int getTypecode(char *msgi);
 float getMOD(float x, float y);
 int getLarger(int a, int b);
+int CRC_verifyMsg(char *msg);
 
 #endif
