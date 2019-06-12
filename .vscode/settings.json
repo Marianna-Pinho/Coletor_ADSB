@@ -4,6 +4,7 @@
         "adsb_time.h": "c",
         "signal.h": "c",
         "types.h": "c",
-        "adsb_decoding.h": "c"
+        "adsb_decoding.h": "c",
+        "stdio.h": "c"
     }
 }
