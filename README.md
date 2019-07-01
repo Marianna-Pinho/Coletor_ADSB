@@ -1,17 +1,70 @@
-# Coletor_ADSB v 1.0
-This repository has the C code to perform the decoding of ADS-B messages.
+# RadarLivre C Collector
 
-#Serial Communication
+This algorithm is an ADS-B based message decoder written in C language, which communicates with a [micro ADS-B receptor](http://www.microadsb.com/), decodes the incoming messages and saves them in a local database. This project makes part of the RadarLivre project, developed by students and professors of Federal University of Ceara, campus Quixada.
 
-## The microADSB receptor
-Our system (Collector) uses an auxiliary [microADSB receptor](http://www.microadsb.com/), responsible for receiving the eletromagnetic waves from aircraft communication and for converting it into 
-ASCII characters. These characters are sent to our system through a serial port.
+## Files
+This project contains the following files:
+- **adsb_auxiliars(.c .h)**: this file has the auxiliary functions that are used for conversion, formatting, calculation and CRC operations.
+- **adsb_decoding(.c .h)**: this file has the functions responsible for decode the incoming ADS-B messagens, getting the *ICAO address*, *callsign*, *latitude*, *longitude*, *altitude*, *horizontal velocity*, *vertical velocity* and *heading*.
+- **adsb_lists(.c .h)**: this file has the functions responsible for list operations. The list is used to temporarily store the decoded ADS-B information.
+- **adsb_serial(.c .h)**: the functions of this file are responsible for configuring and performing the serial communication operations, which are used to communicate with the micro ADS-B receptor.
+- **adsb_time(.c .h)**: this file has the functions responsible for time reading and formatting, and for interrupt and timer configuration.
+- **adsb_createLog(.c .h)**: this file has the functions responsible for create logs about the system.
+- **adsb_db(.c .h)**: this file has the functions responsible for database operations. More specific, for initializing and saving operations.
+- **adsb_userInfo.h**: this file has the user information that will be used to communicate with a remote server.
+- **adsb_collector.c**: this file has the main function.
 
-Searching for some place that could helps us to understand the messages format sent by the
-microADSB receptor, we found the [RxControl](http://rxcontrol.free.fr/PicADSB/index.html) site. In RxControl, was said that the receptor can send a message in the format **@ + 48 bitsTAG + 112 bitsFRAME + ; + \<CR\>\<LF\>**. As we know, 1 Byte is equal to 8 bits. So, we could want to translate (48 + 112 = 160) bits into (160/8 = 20) Bytes. However, instead of sends that bits to the serial port, the receptor first convertes those bits into hexadecimal characters and after translate them to ASCII characters. Only after those, the receptor sends the message.
+### Database
+The database used in this version is the [SQLite](https://www.sqlite.org/index.html) 3.28.0. We use two main tables: **radarlivre_api_adsbinfo** and **radarlivre_api_airline**. Their schematic can be saw below:
 
-Hexadecimal digits can be built with 4 bits. So, the receptor creates a message with (160/4 = 40) digits. Once ASCII characters have 8 bits, the receptor will send to out system:
-**@ + 40 hexadecimal bits + ; + \<CR\>\<LF\>** = **8 + 40*8 + 8 + 8 + 8** = **1 Byte + 40 Bytes + 1 Byte + 1 Byte + 1 Byte** = **44 Bytes**.
+```sh
+CREATE TABLE "radarlivre_api_adsbinfo" 
+(
+	"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+	"collectorKey" varchar(64) NULL, 
+	"modeSCode" varchar(16) NULL, 
+	"callsign" varchar(16) NULL, 
+	"latitude" decimal NOT NULL, 
+	"longitude" decimal NOT NULL, 
+	"altitude" decimal NOT NULL, 
+	"verticalVelocity" decimal NOT NULL, 
+	"horizontalVelocity" decimal NOT NULL, 
+	"groundTrackHeading" decimal NOT NULL, 
+	"timestamp" bigint NOT NULL, 
+	"timestampSent" bigint NOT NULL, 
+	"messageDataId" varchar(100) NOT NULL, 
+	"messageDataPositionEven" varchar(100) NOT NULL, 
+	"messageDataPositionOdd" varchar(100) NOT NULL, 
+	"messageDataVelocity" varchar(100) NOT NULL
+);
+```
 
-## The Collector
-Although the microADSB receptor is sending 44 bytes, the Collector was configured to ignore the <CR> character. So, the system is reading just 43 bytes.
+```sh
+CREATE TABLE "radarlivre_api_airline"
+(
+	"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+	"name" varchar(255) NULL,
+	"alias" varchar(255) NULL,
+	"iata" varchar(4) NULL,
+	"icao" varchar(8) NULL,
+	"callsign" varchar(255) NULL,
+	"country" varchar(255) NULL,
+	"active" bool NULL	
+);
+```
+
+## Compiling and Running
+
+To compile the system, we use the Makefile. As compiler, we are using the **gcc** and as a cross-compiler we are using the **arm-linux-gnueabihf-gcc**. To compile, it is just necessary to execute the make command, as below:
+```sh
+make
+```
+And to clean the project, we execute:
+```sh
+make clean
+```
+After the compiling, a file called **run_collector** will be generated. To run the system, we run this file, as below:
+```sh
+sudo ./run_collector
+```
+When running the system, two files will be generated: **radarlivre_v4.db**, which is the database file, and **adsb_log.log**, which is the log file.
