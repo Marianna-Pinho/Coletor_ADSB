@@ -32,7 +32,7 @@ void suddenStop(){
 }
 
 int main(){
-    int serialPort = 0;
+    int serialPort = 0, syndrome = 0;
     char buffer[29]; buffer[0] = '\0';
     adsbMsg *node = NULL;
 
@@ -50,7 +50,7 @@ int main(){
         SERIAL_communicate(&serialPort, buffer);
 
         //If CRC returns 1, the message is correct. Otherwise, we don't do anything with the message.
-        if(CRC_verifyMsg(buffer)){
+        if(CRC_tryMsg(buffer, &syndrome)){
             
             messagesList = decodeMessage(buffer, messagesList, &node);
 

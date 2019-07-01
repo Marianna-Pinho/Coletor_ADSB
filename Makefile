@@ -32,7 +32,7 @@ LDFLAGS = -lm -l sqlite3 -lrt
 #
 
 all:
-	$(CC_CROSS) -o ./$(PROJ_NAME) $(C_SOURCE) $(LDFLAGS)
+	$(CC) -o ./$(PROJ_NAME) $(C_SOURCE) $(LDFLAGS)
 
 clean:
 	rm -rf ./src/$(PROJ_NAME) $(PROJ_NAME) *~

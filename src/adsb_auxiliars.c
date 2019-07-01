@@ -103,6 +103,57 @@ void hex2bin(char *msgi, char *msgbin){
 }
 
 /*==============================================
+FUNCTION: int2hex
+INPUT: an integer
+OUTPUT: a char
+DESCRIPTION: this function receives an integer number
+between 0 and 15 and transforms it in its hexadecimal
+digit representation. 
+================================================*/
+char int2hex(int num){
+	if((0 <= num) && (num <= 9)){
+		return num + 48;	
+	}
+	else if((10 <= num) && (num <= 15)){
+		return num + 55;
+	}
+	else{
+		return -1;
+	}
+}
+
+
+/*==============================================
+FUNCTION: bin2hex
+INPUT: two char vectors
+OUTPUT: void
+DESCRIPTION: this function receives a binary number
+and transforms it in its hexadecimal representation. 
+================================================*/
+void bin2hex(char *msgbin, char *msghex){
+	int tambin = strlen(msgbin);
+	int tamhex = ((tambin % 4 == 0) ? tambin/4 : tambin/4 + 1);
+	int cont = 4, soma = 0, mult = 1, i = 0, j = 0;
+
+	j = tamhex - 1;
+	for(i = tambin-1; i >= 0; i--){
+		soma += (msgbin[i]-48) * mult;
+		mult *= 2;
+		cont--;
+
+		if((cont == 0) || (i == 0)){
+			msghex[j] = int2hex(soma);
+			cont = 4;
+			soma = 0;
+			mult = 1;
+			j--;
+		}
+	}
+
+	msghex[tamhex] = '\0';
+}
+
+/*==============================================
 FUNCTION: getDownlinkFormat
 INPUT: a char vector
 OUTPUT: it returns an integer
@@ -226,7 +277,7 @@ int getLarger(int a, int b){
 
 /*==============================================
 FUNCTION: CRC_verifyMsg
-INPUT: a char vector
+INPUT: a char vector and a pointer to an integer
 OUTPUT: an integer
 DESCRIPTION: this function receives an adsb message
 and returns if the received message is correct or
@@ -234,7 +285,7 @@ not, applying CRC (Cyclic Redundancy Check). If this
 functions returns 0, the message has parity erros.
 Otherwise, the function returns 1.
 ================================================*/
-int CRC_verifyMsg(char *msg){
+int CRC_verifyMsg(char *msg, int *syndrome){
 
 	char GENERATOR[] = "1111111111111010000001001";
 
@@ -266,13 +317,68 @@ int CRC_verifyMsg(char *msg){
 	}	
 
 	printf("%s\n",msgbin);
-	
+	*syndrome = bin2int(msgbin);
+
 	//If the remainder of the division is zero, the message is correct and we return 1.
 	//Otherwise, we return 0.
 	for(pos_msg = 0; pos_msg < len_msg; pos_msg++){
 		if(msgbin[pos_msg] == '1'){
 			return 0;
 		}
+	}
+
+	return 1;
+}
+
+/*==============================================
+FUNCTION: CRC_correctMsg
+INPUT: a char vector and a pointer to an integer
+OUTPUT: an integer
+DESCRIPTION: this function receives an adsb message
+and a syndrome and makes a one single bit CRC correction
+in the bit that generates that syndrome. If this
+functions returns 1, the message was succesfully
+corrected. Otherwise, the function returns 0.
+================================================*/
+int CRC_correctMsg(char *msghex, int *syndrome){
+	char msgbin[4*strlen(msghex) + 1];
+	int i = 0;
+
+	hex2bin(msghex, msgbin);
+	for(i = 0; i < crcTableSize; i++){
+		if(crcSyndromeTable[i] == *syndrome){
+			msgbin[crcTableSize - i - 1] ^= 1;
+			bin2hex(msgbin, msghex);
+
+			return CRC_verifyMsg(msghex, syndrome);
+		}
+	}
+
+	return 0;
+}
+
+/*==============================================
+FUNCTION: CRC_tryMsg
+INPUT: a char vector and a pointer to an integer
+OUTPUT: an integer
+DESCRIPTION: this function receives an adsb message
+and a syndrome, verifies if the message contains some
+error and, if the message has an error, it tries to
+correct. If this functions returns 1, the message was
+succesfully corrected. Otherwise, the function returns 0.
+It is important remember that this algorithm just correct
+one single bit error.
+================================================*/
+int CRC_tryMsg(char *msg, int *syndrome){
+	if(!CRC_verifyMsg(msg, syndrome)){
+		printf("CRC detected an error!\n");
+
+		if(CRC_correctMsg(msg, syndrome)){
+			printf("Message successfully corrected!\n");
+			return 1;
+		}
+
+		return 0;
 	}
 
 	return 1;
