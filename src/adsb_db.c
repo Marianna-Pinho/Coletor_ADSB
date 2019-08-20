@@ -23,10 +23,10 @@ sqlite3 * DB_open(char *db_name){
     status = sqlite3_open((const char *)db_name, &db_handler);
     
     if(status == SQLITE_OK){
-        printf("Database successfully opened!\n");
+        //()printf("Database successfully opened!\n");
         return db_handler;
     }else{
-        printf("Database not opened: %s\n", sqlite3_errmsg(db_handler));
+        //()printf("Database not opened: %s\n", sqlite3_errmsg(db_handler));
         LOG_add("DB_open", "database couldn't be opened!");
 
         return NULL;
@@ -45,10 +45,10 @@ message and sql query.
 void DB_close(sqlite3 **db_handler, char**errmsg, char**sqlText){
 
     if(sqlite3_close_v2(*db_handler) != SQLITE_OK){
-        printf("It couldn't close the database!\n");
+        //()printf("It couldn't close the database!\n");
         LOG_add("DB_saveADSBInfo", "Database couldn't be closed");
     }else{
-        printf("Database successfully closed!\n");
+        //()printf("Database successfully closed!\n");
     }
 
     sqlite3_free(*errmsg);
@@ -75,7 +75,7 @@ int DB_saveADSBInfo(adsbMsg *msg){
     
     //It's recommended to call this function prior to any other from sqlite (https://www.sqlite.org/c3ref/initialize.html)
     if(sqlite3_initialize() != SQLITE_OK){
-        printf("It wasn't possible to initialize SQLITE!\n");
+        //()printf("It wasn't possible to initialize SQLITE!\n");
         LOG_add("DB_saveADSBInfo", "It wasn't possible to initialize SQLITE");
 
         return DATABASE_ERROR;
@@ -99,7 +99,7 @@ int DB_saveADSBInfo(adsbMsg *msg){
     );
 
     if(sqlText == NULL){
-        printf("SQLITE query couldn't be created!\n");
+        //()printf("SQLITE query couldn't be created!\n");
         LOG_add("DB_saveADSBInfo", "SQLITE query couldn't be create");
         DB_close(&db_handler, &errmsg, &sqlText);
         sqlite3_shutdown();
@@ -110,10 +110,10 @@ int DB_saveADSBInfo(adsbMsg *msg){
     status = sqlite3_exec(db_handler, sqlText, NULL, NULL, &errmsg); //It tries to execute the sql statement
     
     if(status ==  SQLITE_OK){
-        printf("Data was saved successfully!\n");
+        //()printf("Data was saved successfully!\n");
         LOG_add("DB_saveADSBInfo", "Data was saved successfully");
     }else{
-        printf("Data couldn't be saved: %s\n", errmsg);
+        //()printf("Data couldn't be saved: %s\n", errmsg);
         LOG_add("DB_saveADSBInfo", "Data couldn't be saved");
     }
  
@@ -140,8 +140,8 @@ int DB_saveAirline(adsbMsg *msg){
 
     //It's recommended to call this function prior to any other from sqlite (https://www.sqlite.org/c3ref/initialize.html)
     if(sqlite3_initialize() != SQLITE_OK){
-        printf("It wasn't possible to initialize SQLITE!\n");
-        LOG_add("DB_saveAirline", "SQLITE query couldn't be create");
+        //()printf("It wasn't possible to initialize SQLITE!\n");
+        LOG_add("DB_saveAirline", "It wasn't possible to initialize SQLITE");
         return DATABASE_ERROR;
     }
 
